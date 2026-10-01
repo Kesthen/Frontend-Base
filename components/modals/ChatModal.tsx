@@ -159,18 +159,18 @@ export default function ChatModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="bg-[#162119] border border-amber-600/30 text-amber-100 rounded-2xl w-full max-w-lg h-[620px] flex flex-col shadow-2xl relative overflow-hidden">
+      <div className="bg-[#162119] border border-amber-600/30 text-amber-100 rounded-2xl w-full max-w-lg h-[620px] max-h-[calc(100vh-2rem)] flex flex-col shadow-2xl relative overflow-hidden">
         {/* Header */}
         <div className="bg-[#101712] p-4 border-b border-amber-800/40 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#F0822D]/20 border border-[#F0822D]/40 flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-[#F0822D]" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h3 className="font-playfair text-base font-bold text-amber-200">
                 Chat de Reserva #{reservation.id.slice(-4)}
               </h3>
-              <p className="text-xs text-amber-300/80">
+              <p className="break-words text-xs text-amber-300/80">
                 {reservation.dishName} ({reservation.portions} porción/es) — ${reservation.totalPrice.toLocaleString("es-CO")}
               </p>
             </div>
@@ -184,7 +184,7 @@ export default function ChatModal({
         </div>
 
         {/* Reservation Status Bar */}
-        <div className="bg-[#1C2C20] px-4 py-2.5 border-b border-amber-900/40 flex items-center justify-between text-xs">
+        <div className="bg-[#1C2C20] px-4 py-2.5 border-b border-amber-900/40 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
             <span
               className={`w-2.5 h-2.5 rounded-full ${
@@ -217,7 +217,7 @@ export default function ChatModal({
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#121A14]">
+        <div className="min-h-0 flex-1 p-4 overflow-y-auto space-y-3 bg-[#121A14]">
           {messages.map((msg) => {
             const isMe = msg.sender === (currentUser.name || currentUser.commercialName || currentUser.email);
             const isSys = msg.sender === "Sistema OllaCercana";

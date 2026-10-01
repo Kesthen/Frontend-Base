@@ -94,7 +94,7 @@ export default function AdminPage() {
       </header>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8 my-6">
+        <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border-2 border-[#8B5E34]/50 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/60 space-y-8 my-6">
           <AccountNav user={user} current="admin" unreadCount={unreadCount} />
 
           <div className="space-y-4 text-left">
@@ -113,17 +113,13 @@ export default function AdminPage() {
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-6 text-xs font-bold tracking-widest uppercase text-stone-300">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              alert("Centro de Ayuda OllaCercana: Soporte para cocineras y compradores vecinales.");
-            }}
+          <Link
+            href="/ayuda"
             className="hover:text-white flex items-center gap-2 transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5 text-stone-400" />
             <span>Ayuda</span>
-          </a>
+          </Link>
 
           <span className="text-[11px] text-stone-500 font-mono tracking-normal">v2.4</span>
         </div>

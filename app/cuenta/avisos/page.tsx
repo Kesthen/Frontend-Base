@@ -85,14 +85,14 @@ export default function AvisosPage() {
       </header>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8 my-6">
+        <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border-2 border-[#8B5E34]/50 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/60 space-y-8 my-6">
           <AccountNav user={user} current="avisos" unreadCount={unreadCount} />
 
           <div className="space-y-6 text-left">
-            <div className="flex items-center justify-between bg-[#131D24] border border-sky-500/30 rounded-2xl p-4 shadow-md">
-              <div>
-                <h4 className="text-sm font-bold text-sky-200 flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-sky-400" />
+            <div className="flex flex-col items-start justify-between gap-3 bg-[#131D24] border border-sky-500/30 rounded-2xl p-4 shadow-md sm:flex-row sm:items-center">
+              <div className="min-w-0">
+                <h4 className="font-['Caveat',cursive] text-2xl font-bold text-[#F4C430] flex items-start gap-2">
+                  <Bell className="mt-1 h-5 w-5 shrink-0 text-sky-400" />
                   <span>Notificaciones y Avisos de Reservas (HU-17)</span>
                 </h4>
                 <p className="text-xs text-stone-300">Historial persistente de alertas sobre cambios de estado y mensajes entrantes.</p>
@@ -103,7 +103,7 @@ export default function AvisosPage() {
                   setNotifications(updated);
                   saveNotifications(updated);
                 }}
-                className="px-3.5 py-1.5 rounded-xl bg-stone-900 border border-white/20 text-stone-300 text-xs font-semibold hover:text-white"
+                className="self-stretch px-3.5 py-2 sm:self-auto rounded-xl bg-stone-900 border border-white/20 text-stone-300 text-xs font-semibold hover:text-white"
               >
                 Marcar todas como leídas
               </button>
@@ -118,7 +118,7 @@ export default function AvisosPage() {
                   }`}
                 >
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="text-xs font-bold text-amber-300">{notif.title}</span>
                       <span className="text-[10px] text-stone-500 font-mono">{notif.timestamp}</span>
                     </div>
@@ -154,17 +154,13 @@ export default function AvisosPage() {
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-6 text-xs font-bold tracking-widest uppercase text-stone-300">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              alert("Centro de Ayuda OllaCercana: Soporte para cocineras y compradores vecinales.");
-            }}
+          <Link
+            href="/ayuda"
             className="hover:text-white flex items-center gap-2 transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5 text-stone-400" />
             <span>Ayuda</span>
-          </a>
+          </Link>
 
           <span className="text-[11px] text-stone-500 font-mono tracking-normal">v2.4</span>
         </div>

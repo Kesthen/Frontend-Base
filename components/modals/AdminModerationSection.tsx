@@ -61,20 +61,20 @@ export default function AdminModerationSection({ currentUser }: AdminModerationS
   };
 
   return (
-    <div className="bg-[#18231B] border border-amber-600/30 rounded-2xl p-6 text-amber-100 shadow-xl space-y-4">
-      <div className="flex items-center justify-between border-b border-amber-800/40 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center">
+    <div className="bg-[#18231B] border border-amber-600/30 rounded-2xl p-4 sm:p-6 text-amber-100 shadow-xl space-y-4">
+      <div className="flex flex-col items-start justify-between gap-3 border-b border-amber-800/40 pb-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="w-10 h-10 shrink-0 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center">
             <ShieldCheck className="w-5 h-5 text-amber-300" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="font-playfair text-xl font-bold text-amber-200">
               Módulo de Moderación y Auditoría (HU-19)
             </h3>
             <p className="text-xs text-amber-300/80">Gestión de denuncias comunitarias de la vecindad</p>
           </div>
         </div>
-        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-3 py-1 rounded-full font-semibold">
+        <span className="self-start bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-3 py-1 rounded-full font-semibold sm:self-auto">
           Administrador Activo
         </span>
       </div>
@@ -90,7 +90,7 @@ export default function AdminModerationSection({ currentUser }: AdminModerationS
               key={rep.id}
               className="bg-[#101712] border border-amber-900/40 rounded-xl p-4 space-y-3"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-xs font-bold text-amber-200">
                     Denunciante: {rep.reporterName}

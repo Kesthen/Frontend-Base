@@ -171,13 +171,13 @@ export default function PerfilPage() {
       </header>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8 my-6">
+        <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border-2 border-[#8B5E34]/50 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/60 space-y-8 my-6">
           <AccountNav user={user} current="perfil" />
 
           <form onSubmit={handleProfileSave} className="space-y-4 text-left border-t border-white/10 pt-6">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-[#F0822D]" />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="min-w-0 font-['Caveat',cursive] text-2xl font-bold text-[#F4C430] flex items-center gap-2">
+                <UserCheck className="h-5 w-5 shrink-0 text-[#F0822D]" />
                 Perfil & Datos Comerciales
               </h4>
               {profileSuccess && (
@@ -194,7 +194,7 @@ export default function PerfilPage() {
                 value={commercialName}
                 onChange={(e) => setCommercialName(e.target.value)}
                 placeholder="ej: Cocina de Doña Elena"
-                className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#F0822D] outline-none"
+                className="w-full bg-[#FBF3E7] border border-[#D9B68C] rounded-xl px-4 py-2.5 text-sm text-[#4A3222] placeholder-[#A88B6F] focus:border-[#F0822D] focus:ring-2 focus:ring-[#F0822D]/30 outline-none transition-all shadow-sm"
               />
             </div>
 
@@ -204,7 +204,7 @@ export default function PerfilPage() {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={2}
-                className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#F0822D] outline-none resize-none"
+                className="w-full bg-[#FBF3E7] border border-[#D9B68C] rounded-xl px-4 py-2.5 text-sm text-[#4A3222] placeholder-[#A88B6F] focus:border-[#F0822D] focus:ring-2 focus:ring-[#F0822D]/30 outline-none transition-all shadow-sm resize-none"
               />
             </div>
 
@@ -216,7 +216,7 @@ export default function PerfilPage() {
                 type="text"
                 value={residentialComplex}
                 onChange={(e) => setResidentialComplex(e.target.value)}
-                className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#F0822D] outline-none"
+                className="w-full bg-[#FBF3E7] border border-[#D9B68C] rounded-xl px-4 py-2.5 text-sm text-[#4A3222] placeholder-[#A88B6F] focus:border-[#F0822D] focus:ring-2 focus:ring-[#F0822D]/30 outline-none transition-all shadow-sm"
               />
             </div>
 
@@ -229,7 +229,7 @@ export default function PerfilPage() {
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
                 maxLength={10}
-                className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:border-[#F0822D] outline-none font-mono"
+                className="w-full bg-[#FBF3E7] border border-[#D9B68C] rounded-xl px-4 py-2.5 text-sm text-[#4A3222] placeholder-[#A88B6F] focus:border-[#F0822D] focus:ring-2 focus:ring-[#F0822D]/30 outline-none transition-all shadow-sm font-mono"
               />
             </div>
 
@@ -285,17 +285,13 @@ export default function PerfilPage() {
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-6 text-xs font-bold tracking-widest uppercase text-stone-300">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              alert("Centro de Ayuda OllaCercana: Soporte para cocineras y compradores vecinales.");
-            }}
+          <Link
+            href="/ayuda"
             className="hover:text-white flex items-center gap-2 transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5 text-stone-400" />
             <span>Ayuda</span>
-          </a>
+          </Link>
 
           <span className="text-[11px] text-stone-500 font-mono tracking-normal">v2.4</span>
         </div>
@@ -321,7 +317,7 @@ export default function PerfilPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1 sm:gap-2">
               {otpDigits.map((digit, idx) => (
                 <input
                   key={idx}
@@ -339,7 +335,7 @@ export default function PerfilPage() {
                       nextInput?.focus();
                     }
                   }}
-                  className="w-10 h-12 text-center text-lg font-bold bg-black/60 border border-white/20 rounded-xl focus:border-[#F0822D] text-white outline-none"
+                  className="h-11 w-9 text-center text-lg font-bold bg-[#FBF3E7] border border-[#D9B68C] rounded-xl focus:border-[#F0822D] focus:ring-2 focus:ring-[#F0822D]/30 text-[#4A3222] outline-none shadow-sm sm:h-12 sm:w-10"
                 />
               ))}
             </div>

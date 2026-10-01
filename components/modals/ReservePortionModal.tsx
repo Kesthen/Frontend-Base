@@ -116,18 +116,19 @@ export default function ReservePortionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-[#181A1C] border border-stone-800 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden relative my-4 text-stone-900">
+      <div className="bg-[#e8d1a3] border-[5px] border-[#8d5b37] rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden relative my-4 text-stone-900">
+        <div aria-hidden="true" className="absolute z-20 top-0 left-1/2 -translate-x-1/2 -rotate-2 w-28 h-8 bg-[#d6b776]/90 border-x border-[#b99655]/70 shadow-[0_2px_4px_rgba(0,0,0,0.2)]" />
         
-        {/* ── 1. DARK CHALKBOARD TOP HEADER (EXACT MATCH TO REFERENCE) ── */}
-        <div className="bg-[#1A1C1E] p-6 sm:p-7 text-white relative border-b border-stone-800/80">
+        {/* ── 1. RECIPE NOTE HEADER ── */}
+        <div className="bg-[#e8d1a3] p-6 pt-9 sm:p-7 sm:pt-10 text-[#493323] relative border-b border-dashed border-[#927148] shadow-[inset_0_0_30px_rgba(139,94,48,0.16)]" style={{ backgroundImage: "radial-gradient(ellipse at 15% 10%, rgba(255,255,235,.48), transparent 35%), radial-gradient(ellipse at 95% 88%, rgba(135,82,35,.18), transparent 38%), repeating-linear-gradient(4deg, rgba(117,77,41,.035) 0px, rgba(117,77,41,.035) 1px, transparent 2px, transparent 5px)" }}>
           {/* Top Pills Row */}
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-xs font-bold flex items-center gap-1.5 shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-1.5 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 Cocinando ahora
               </span>
-              <span className="px-3 py-1 rounded-full bg-stone-800/80 border border-stone-700/60 text-stone-300 text-xs font-semibold flex items-center gap-1">
+              <span className="px-3 py-1 rounded-full bg-[#f3dfb9] border border-[#dfc79c] text-stone-700 text-xs font-semibold flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-[#F0822D]" />
                 <span>{dish.distance || "A 320 m de tu casa"}</span>
               </span>
@@ -136,7 +137,7 @@ export default function ReservePortionModal({
             {/* Circular Close Button */}
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-black/60 hover:bg-black text-stone-300 hover:text-white flex items-center justify-center transition-colors shadow-md shrink-0"
+              className="w-8 h-8 rounded-full bg-[#a84c2f] hover:bg-[#873820] text-white flex items-center justify-center transition-colors shadow-md shrink-0"
               title="Cerrar"
             >
               <X className="w-4 h-4" />
@@ -144,21 +145,22 @@ export default function ReservePortionModal({
           </div>
 
           {/* Dish Title */}
-          <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight mb-3">
+          <span className="font-['Caveat',cursive] text-sm font-bold text-[#a84c2f]">Receta de la vecina · apuntada en el libretón</span>
+          <h2 className="font-['Caveat',cursive] text-3xl sm:text-4xl font-bold text-[#493323] tracking-tight leading-tight mb-3 mt-1">
             {dish.name}
           </h2>
 
           {/* Price & Badge Row */}
           <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-[#62B869] tracking-tight">
+              <span className="font-['Caveat',cursive] text-3xl font-bold text-[#a84c2f] tracking-tight">
                 {dish.formattedPrice}
               </span>
-              <span className="text-xs text-stone-400 font-medium">por porción completa</span>
+              <span className="text-xs text-stone-600 font-medium">por porción completa</span>
             </div>
 
             {dish.badge && (
-              <span className="px-3.5 py-1 rounded-full border border-[#F0822D]/60 bg-[#F0822D]/10 text-[#F0822D] font-serif text-xs font-bold shadow-xs">
+              <span className="px-3.5 py-1 rounded-full border border-[#bd7540] bg-[#e9c995]/40 text-[#8d4e2c] font-['Caveat',cursive] text-sm font-bold shadow-xs">
                 {dish.badge}
               </span>
             )}

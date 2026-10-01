@@ -237,7 +237,7 @@ export default function CocinerasCercanasPage() {
 
       {/* ── 1. TOP BRAND NAVIGATION BAR ── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 shadow-xs px-4 md:px-8 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="w-8 h-8 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center p-1 transition-transform group-hover:scale-105">
@@ -247,7 +247,7 @@ export default function CocinerasCercanasPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <span className="font-['Outfit',sans-serif] font-extrabold text-2xl tracking-tight leading-none">
+            <span className="font-['Outfit',sans-serif] font-extrabold text-xl sm:text-2xl tracking-tight leading-none">
               <span className="text-[#F0822D]">Olla</span>
               <span className="text-[#62B869]">Cercana</span>
             </span>
@@ -262,13 +262,13 @@ export default function CocinerasCercanasPage() {
           </div>
 
           {/* Quick Nav Links */}
-          <nav className="flex items-center gap-3 sm:gap-6 text-xs font-bold text-stone-700">
+          <nav className="flex shrink-0 items-center gap-1 sm:gap-3 md:gap-6 text-xs font-bold text-stone-700">
             <Link
               href="/menu"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-orange-50 hover:text-[#F0822D] border border-stone-200/70 transition-all"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full bg-stone-100 hover:bg-orange-50 hover:text-[#F0822D] border border-stone-200/70 transition-all"
             >
               <Utensils className="w-3.5 h-3.5 text-[#F0822D]" />
-              <span>Ver Libretón</span>
+              <span className="hidden min-[360px]:inline">Ver Libretón</span>
             </Link>
             <Link
               href="/cuenta"
@@ -1202,32 +1202,31 @@ export default function CocinerasCercanasPage() {
                 <div
                   key={cook.id}
                   onClick={() => handleSelectCook(cook, true)}
-                  className={`cursor-pointer rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between group shadow-sm hover:shadow-xl ${
+                  className={`cursor-pointer relative rounded-xl border transition-all duration-200 overflow-hidden flex flex-col justify-between group shadow-[0_12px_24px_rgba(47,25,12,0.35)] hover:shadow-xl bg-[#55351f] p-2 pt-5 ${
                     isSelected
-                      ? "ring-2 ring-[#F0822D] border-[#F0822D] bg-white scale-[1.01]"
-                      : "border-stone-300/90 bg-white hover:border-[#F0822D]/60"
+                    ? "ring-2 ring-[#F0822D] border-[#F0822D] scale-[1.01]"
+                      : "border-[#6b4528] hover:border-[#F0822D]/60"
                   }`}
+                  style={{ backgroundImage: "repeating-linear-gradient(8deg, rgba(58,29,14,.2) 0px, rgba(58,29,14,.2) 2px, transparent 3px, transparent 9px), linear-gradient(135deg, #714325, #3c2113 52%, #82532f)" }}
                 >
-                  {/* Chalkboard Upper Card Header */}
-                  <div className="relative bg-[#1A1C1E] border-b-4 border-[#3D2E24] p-4 text-white flex flex-col justify-between min-h-[160px] overflow-hidden">
-                    {/* Hanging rope loop doodles */}
-                    <div className="absolute top-1 left-4 w-2 h-2 rounded-full bg-stone-500 border border-stone-800" />
-                    <div className="absolute top-1 right-4 w-2 h-2 rounded-full bg-stone-500 border border-stone-800" />
+                  <div aria-hidden="true" className="absolute z-20 top-0 left-1/2 -translate-x-1/2 -rotate-2 w-24 h-7 bg-[#d6b776]/90 border-x border-[#b99655]/70 shadow-[0_2px_4px_rgba(0,0,0,0.2)]" />
+                  {/* Recipe clipping on aged paper over the wooden counter */}
+                  <div className="relative bg-[#e8d1a3] border border-[#a58150] p-4 pt-6 text-[#493323] flex flex-col justify-between min-h-[170px] overflow-hidden shadow-[inset_0_0_24px_rgba(108,68,30,0.18)] [clip-path:polygon(1%_1%,98%_0%,100%_3%,99%_97%,97%_99%,3%_100%,1%_97%,0%_4%)]" style={{ backgroundImage: "radial-gradient(ellipse at 15% 10%, rgba(255,255,235,.48), transparent 35%), radial-gradient(ellipse at 95% 88%, rgba(135,82,35,.18), transparent 38%), repeating-linear-gradient(4deg, rgba(117,77,41,.035) 0px, rgba(117,77,41,.035) 1px, transparent 2px, transparent 5px)" }}>
 
                     {/* Top Row: Distance & Live Badge */}
                     <div className="flex items-center justify-between gap-2 z-10">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-xs text-[11px] font-semibold text-stone-200 border border-white/15">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#f3dfb9] text-[11px] font-semibold text-stone-700 border border-[#dfc79c]">
                         <MapPin className="w-3 h-3 text-[#F0822D]" />
                         {cook.distanceText}
                       </span>
 
                       {cook.isOpen ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#62B869]/20 text-[#62B869] text-[11px] font-bold border border-[#62B869]/40">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-[11px] font-bold border border-green-300">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#62B869] animate-ping" />
                           Cocinando ahora
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-800 text-stone-400 text-[11px] font-medium border border-stone-700">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-200 text-stone-600 text-[11px] font-medium border border-stone-300">
                           Cerrada hoy
                         </span>
                       )}
@@ -1235,32 +1234,32 @@ export default function CocinerasCercanasPage() {
 
                     {/* Dish Name & Price */}
                     <div className="my-2 z-10">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-[#F0822D]">
-                        Plato estrella de hoy:
+                      <span className="font-['Caveat',cursive] text-sm font-bold text-[#a84c2f]">
+                        Apunte de hoy • Plato estrella:
                       </span>
-                      <h3 className="font-['Playfair_Display',serif] text-xl font-bold leading-snug group-hover:text-[#F0822D] transition-colors">
+                      <h3 className="font-['Caveat',cursive] text-2xl font-bold leading-snug group-hover:text-[#b64b32] transition-colors">
                         {cook.featuredDish.name}
                       </h3>
-                      <div className="text-lg font-extrabold text-[#62B869] font-mono mt-0.5">
+                      <div className="text-xl font-bold text-[#a84c2f] font-['Caveat',cursive] mt-0.5">
                         {cook.featuredDish.formattedPrice}
                       </div>
                     </div>
 
                     {/* Dish Preview Thumbnail */}
-                    <div className="flex items-center justify-between text-xs text-stone-400 border-t border-stone-800/80 pt-2">
-                      <span className="flex items-center gap-1 text-amber-300 font-bold">
+                    <div className="flex items-center justify-between text-xs text-stone-600 border-t border-dashed border-[#c9aa76] pt-2">
+                      <span className="flex items-center gap-1 text-amber-800 font-bold">
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                         {cook.rating}{" "}
-                        <span className="text-stone-400 font-normal">({cook.reviews})</span>
+                        <span className="text-stone-500 font-normal">({cook.reviews})</span>
                       </span>
-                      <span className="text-[11px] text-stone-300 group-hover:text-white transition-colors flex items-center gap-1">
+                      <span className="text-[11px] text-stone-600 group-hover:text-[#a84c2f] transition-colors flex items-center gap-1">
                         Ver ficha <ChevronRight className="w-3 h-3 text-[#F0822D]" />
                       </span>
                     </div>
                   </div>
 
                   {/* Lower Card Section: Cook Profile & Handwritten Note */}
-                  <div className="p-4 bg-[#FAF7F2] flex-1 flex flex-col justify-between gap-3">
+                  <div className="p-4 bg-[#e8d1a3] flex-1 flex flex-col justify-between gap-3 border-x border-[#a58150]">
                     {/* Cook Info */}
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-full overflow-hidden relative border-2 border-[#E5DECF] shrink-0 shadow-xs">

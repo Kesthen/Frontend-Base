@@ -228,25 +228,27 @@ export default function CuentaPage() {
 
       {/* ── MAIN CONTENT CONTAINER (CENTERED FORM PANEL) ── */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-md mx-auto bg-black/25 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/90 space-y-6">
+        <div className="w-full max-w-md mx-auto bg-[#24180f]/95 backdrop-blur-2xl border border-[#d9a15b]/55 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/90 ring-1 ring-black/30 space-y-6">
           {/* Login / Register Toggle Header */}
-          <div className="flex items-center justify-around border-b border-white/10 pb-3">
+          <div className="flex items-center justify-around border-b border-amber-100/15 pb-3">
             <button
+              type="button"
               onClick={() => setAuthMode("login")}
-              className={`text-sm font-bold uppercase tracking-wider pb-1.5 border-b-2 transition-all cursor-pointer ${
+              className={`rounded-t-xl px-3 py-2 text-sm font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 authMode === "login"
-                  ? "border-[#F0822D] text-[#F0822D]"
-                  : "border-transparent text-stone-400 hover:text-stone-200"
+                  ? "border-[#F0822D] bg-[#F0822D]/15 text-[#ffd091]"
+                  : "border-transparent text-amber-100/70 hover:text-white"
               }`}
             >
               Iniciar Sesión
             </button>
             <button
+              type="button"
               onClick={() => setAuthMode("register")}
-              className={`text-sm font-bold uppercase tracking-wider pb-1.5 border-b-2 transition-all cursor-pointer ${
+              className={`rounded-t-xl px-3 py-2 text-sm font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                 authMode === "register"
-                  ? "border-[#F0822D] text-[#F0822D]"
-                  : "border-transparent text-stone-400 hover:text-stone-200"
+                  ? "border-[#F0822D] bg-[#F0822D]/15 text-[#ffd091]"
+                  : "border-transparent text-amber-100/70 hover:text-white"
               }`}
             >
               Registrarme
@@ -329,16 +331,12 @@ export default function CuentaPage() {
                   className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-sm text-white placeholder-stone-500 focus:border-[#F0822D] focus:ring-1 focus:ring-[#F0822D] outline-none transition-all"
                 />
                 <div className="text-right pt-0.5">
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert("Enlace de recuperación enviado a tu identificador.");
-                    }}
+                  <Link
+                    href="/ayuda#recuperacion"
                     className="text-xs text-[#F0822D] hover:underline"
                   >
                     ¿Olvidaste tu contraseña?
-                  </a>
+                  </Link>
                 </div>
               </div>
 
@@ -528,17 +526,13 @@ export default function CuentaPage() {
             <span>{authMode === "login" ? "Crear cuenta" : "Iniciar sesión"}</span>
           </button>
 
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              alert("Centro de Ayuda OllaCercana: Soporte para cocineras y compradores vecinales.");
-            }}
+          <Link
+            href="/ayuda"
             className="hover:text-white flex items-center gap-2 transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5 text-stone-400" />
             <span>Ayuda</span>
-          </a>
+          </Link>
 
           <span className="text-[11px] text-stone-500 font-mono tracking-normal">v2.4</span>
         </div>

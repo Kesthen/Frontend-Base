@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { BookOpen, MapPin, Phone } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 
@@ -66,10 +67,8 @@ export default function HeroSection() {
           {/* =================================================================== */}
           {/* BADGE 1: LIBRETÓN (OVER NOTEBOOK ON LEFT) */}
           {/* =================================================================== */}
-          <a
+          <Link
             href="/menu"
-            target="_blank"
-            rel="noopener noreferrer"
             className="group absolute left-[8%] sm:left-[15%] lg:left-[20%] top-[45%] sm:top-[48%] lg:top-[50%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-105 z-30"
           >
             {/* Dark Glassmorphic Pill */}
@@ -87,15 +86,13 @@ export default function HeroSection() {
                 <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v-1.5a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2V14l-2.2-2.2a2 2 0 0 0-2.8 2.8L9 21.5C10.5 23 12.5 24 14.5 24H17a5 5 0 0 0 5-5v-6a2 2 0 0 0-2-2z"/>
               </svg>
             </div>
-          </a>
+          </Link>
 
           {/* =================================================================== */}
           {/* BADGE 2: MAPA DE PROXIMIDAD (OVER MAP IN CENTER) */}
           {/* =================================================================== */}
-          <a
+          <Link
             href="/cocineras-cercanas"
-            target="_blank"
-            rel="noopener noreferrer"
             className="group absolute left-1/2 -translate-x-1/2 top-[38%] sm:top-[40%] lg:top-[42%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-105 z-30"
           >
             {/* Dark Glassmorphic Pill */}
@@ -113,15 +110,13 @@ export default function HeroSection() {
                 <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v-1.5a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2V14l-2.2-2.2a2 2 0 0 0-2.8 2.8L9 21.5C10.5 23 12.5 24 14.5 24H17a5 5 0 0 0 5-5v-6a2 2 0 0 0-2-2z"/>
               </svg>
             </div>
-          </a>
+          </Link>
 
           {/* =================================================================== */}
           {/* BADGE 3: TELÉFONO DE VERIFICACIÓN (OVER PHONE ON RIGHT) */}
           {/* =================================================================== */}
-          <a
-            href="/cuenta"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/cuenta/perfil"
             className="group absolute right-[8%] sm:right-[15%] lg:right-[18%] top-[48%] sm:top-[50%] lg:top-[52%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-105 z-30"
           >
             {/* Dark Glassmorphic Pill */}
@@ -139,7 +134,7 @@ export default function HeroSection() {
                 <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v-1.5a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2V14l-2.2-2.2a2 2 0 0 0-2.8 2.8L9 21.5C10.5 23 12.5 24 14.5 24H17a5 5 0 0 0 5-5v-6a2 2 0 0 0-2-2z"/>
               </svg>
             </div>
-          </a>
+          </Link>
 
         </div>
       </div>
