@@ -3,17 +3,20 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
+import OllaVerdeStamp from "@/components/OllaVerdeStamp";
 import {
   getStoredDishes,
+  getStoredReviews,
+  sharesResidentialComplex,
   DishItem,
+  Review,
   UserProfile,
 } from "@/lib/ollacercana-store";
-import ReservePortionModal from "@/components/modals/ReservePortionModal";
 import ReputationModal from "@/components/modals/ReputationModal";
 import ReportModal from "@/components/modals/ReportModal";
 import ChatModal from "@/components/modals/ChatModal";
-import PhoneVerificationModal from "@/components/modals/PhoneVerificationModal";
 import RatingModal from "@/components/modals/RatingModal";
 import {
   Search,
@@ -38,12 +41,17 @@ import {
   ChefHat,
   Flag,
   Flame,
-  Bell,
   Compass,
   CookingPot,
   Bike,
-  Sun,
-  Moon,
+  ShieldCheck,
+  Leaf,
+  Footprints,
+  Users,
+  Recycle,
+  X,
+  ZoomIn,
+  Settings,
 } from "lucide-react";
 
 interface CartItem {
@@ -53,35 +61,57 @@ interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  dishId?: string;
+  residentialComplex?: string;
 }
 
 export default function MenuPage() {
+  const router = useRouter();
   const [menuTheme, setMenuTheme] = useState<"light" | "dark">("light");
   const [themeReady, setThemeReady] = useState(false);
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"recommended" | "price-asc" | "rating-desc" | "reviews-desc">("recommended");
+  const [minimumRating, setMinimumRating] = useState(0);
+  const [reviewSentiment, setReviewSentiment] = useState<"all" | "positive" | "negative">("all");
+  const [featuredCooksOnly, setFeaturedCooksOnly] = useState(false);
+  const [publishedReviews, setPublishedReviews] = useState<Review[]>([]);
+  const [withinTwoKm, setWithinTwoKm] = useState(true);
   const [selectedDietaryTag, setSelectedDietaryTag] = useState<string>("Todos");
   const [searchQuery, setSearchQuery] = useState("");
   const [storedDishesList, setStoredDishesList] = useState<DishItem[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [storyboardOpen, setStoryboardOpen] = useState(false);
+  const [recipeToShow, setRecipeToShow] = useState<string | null>(null);
 
   // Spec Modal States
-  const [reserveModalDish, setReserveModalDish] = useState<DishItem | null>(null);
   const [reputationCook, setReputationCook] = useState<{ name: string; avatar: string; id: string } | null>(null);
   const [reportTarget, setReportTarget] = useState<{ title: string; id: string; type: "publicacion" | "usuario" } | null>(null);
   const [chatReservationId, setChatReservationId] = useState<string | null>(null);
-  const [phoneVerifyOpen, setPhoneVerifyOpen] = useState(false);
   const [ratingTarget, setRatingTarget] = useState<{ reservationId: string; cookId: string } | null>(null);
 
-  const currentUser: UserProfile = {
+  const [currentUser, setCurrentUser] = useState<UserProfile>({
     name: "Ana María",
     email: "anamaria@example.com",
     phone: "3001234567",
     phoneVerified: true,
     role: "comprador",
     residentialComplex: "Conjunto San Luis",
-  };
+  });
 
   React.useEffect(() => {
     setStoredDishesList(getStoredDishes());
+    setPublishedReviews(getStoredReviews().filter((review) => review.status !== "Pendiente"));
+    try {
+      const storedUser = window.localStorage.getItem("ollacercana_user");
+      const parsedUser = storedUser ? JSON.parse(storedUser) as UserProfile & { isLoggedIn?: boolean } : null;
+      setIsAuthenticated(Boolean(parsedUser?.isLoggedIn));
+      if (parsedUser?.isLoggedIn) setCurrentUser(parsedUser);
+    } catch {
+      setIsAuthenticated(false);
+    }
     const savedTheme = window.localStorage.getItem("ollacercana_menu_theme");
     if (savedTheme === "dark" || savedTheme === "light") setMenuTheme(savedTheme);
     setThemeReady(true);
@@ -91,18 +121,8 @@ export default function MenuPage() {
     if (themeReady) window.localStorage.setItem("ollacercana_menu_theme", menuTheme);
   }, [menuTheme, themeReady]);
 
-  const [cart, setCart] = useState<CartItem[]>([
-    {
-      id: 1,
-      name: "Ajiaco de la casa",
-      cook: "Doña Rosa",
-      price: 18000,
-      image: "/images/menu_ajiaco.jpg",
-      quantity: 1,
-    },
-  ]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [cartReady, setCartReady] = useState(false);
-  const [orderModalOpen, setOrderModalOpen] = useState(false);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -141,6 +161,7 @@ export default function MenuPage() {
       rating: "4,9",
       reviews: "120",
       distance: "A 350 m",
+      residentialComplex: "Conjunto San Luis",
     },
     {
       id: 2,
@@ -155,6 +176,7 @@ export default function MenuPage() {
       rating: "4,8",
       reviews: "95",
       distance: "A 600 m",
+      residentialComplex: "Torres de Chapinero",
     },
     {
       id: 3,
@@ -169,6 +191,7 @@ export default function MenuPage() {
       rating: "4,8",
       reviews: "87",
       distance: "A 800 m",
+      residentialComplex: "Conjunto El Rosal",
     },
     {
       id: 4,
@@ -183,6 +206,7 @@ export default function MenuPage() {
       rating: "4,7",
       reviews: "73",
       distance: "A 1,2 km",
+      residentialComplex: "Altos del Salitre",
     },
     {
       id: 5,
@@ -197,6 +221,7 @@ export default function MenuPage() {
       rating: "4,9",
       reviews: "101",
       distance: "A 1,1 km",
+      residentialComplex: "Residencias Colina",
     },
     {
       id: 6,
@@ -211,32 +236,38 @@ export default function MenuPage() {
       rating: "4,8",
       reviews: "64",
       distance: "A 900 m",
+      residentialComplex: "Bosques de Granada",
     },
   ];
 
-  const addToCart = (dish: (typeof dishes)[0]) => {
+  const addToCart = (dish: DishItem | (typeof dishes)[0]) => {
+    if (!requireAuthentication()) return;
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === dish.id);
+      const numId = typeof dish.id === "number" ? dish.id : parseInt(String(dish.id).replace(/\D/g, "")) || 999;
+      const existing = prev.find((item) => item.id === numId);
       if (existing) {
         return prev.map((item) =>
-          item.id === dish.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === numId ? { ...item, quantity: item.quantity + 1, residentialComplex: dish.residentialComplex } : item
         );
       }
       return [
         ...prev,
         {
-          id: dish.id,
+          id: numId,
           name: dish.name,
           cook: dish.cook,
           price: dish.price,
           image: dish.image,
           quantity: 1,
+          dishId: String(dish.id),
+          residentialComplex: dish.residentialComplex,
         },
       ];
     });
   };
 
   const updateQuantity = (id: number, delta: number) => {
+    if (delta > 0 && !requireAuthentication()) return;
     setCart((prev) =>
       prev
         .map((item) => {
@@ -278,7 +309,7 @@ export default function MenuPage() {
     reviews: parseInt(d.reviews),
     distance: d.distance,
     distanceMeters: parseInt(d.distance),
-    residentialComplex: "Conjunto San Luis",
+    residentialComplex: d.residentialComplex,
     totalPortions: 5,
     availablePortions: d.badge === "Quedan 5" ? 5 : (d.name.includes("Lentejas") ? 1 : 4),
     reservedPortions: 1,
@@ -286,6 +317,16 @@ export default function MenuPage() {
     description: "Delicioso plato casero preparado hoy.",
     createdAt: new Date().toISOString(),
   })));
+
+  const cookReviewsFor = (dish: DishItem) => publishedReviews.filter((review) => review.cookId === dish.cookId);
+  const getDishRating = (dish: DishItem) => Number.parseFloat(String(dish.rating).replace(",", ".")) || 0;
+  const isFeaturedCook = (dish: DishItem) => {
+    const reviews = cookReviewsFor(dish);
+    if (!reviews.length) return false;
+    const average = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+    // Mismo criterio que usa la insignia "Cocinera Destacada" en Opiniones.
+    return average >= 4.8 && reviews.length >= 3;
+  };
 
   const filteredDishes = dynamicDishes.filter((dish) => {
     const matchesCategory =
@@ -296,7 +337,20 @@ export default function MenuPage() {
     const matchesSearch =
       dish.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       dish.cook.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesTag && matchesSearch;
+    const matchesAvailability = !availableOnly || (dish.status === "DISPONIBLE" && dish.availablePortions > 0);
+    const matchesDistance = !withinTwoKm || dish.distanceMeters <= 2000;
+    const matchesRating = getDishRating(dish) >= minimumRating;
+    const cookReviews = cookReviewsFor(dish);
+    const matchesSentiment = reviewSentiment === "all" || cookReviews.some((review) =>
+      reviewSentiment === "positive" ? review.rating >= 4 : review.rating <= 2,
+    );
+    const matchesFeatured = !featuredCooksOnly || isFeaturedCook(dish);
+    return matchesCategory && matchesTag && matchesSearch && matchesAvailability && matchesDistance && matchesRating && matchesSentiment && matchesFeatured;
+  }).sort((a, b) => {
+    if (sortBy === "price-asc") return a.price - b.price;
+    if (sortBy === "rating-desc") return getDishRating(b) - getDishRating(a);
+    if (sortBy === "reviews-desc") return b.reviews - a.reviews;
+    return 0;
   });
 
   const recipeNotes: Record<string, {
@@ -357,7 +411,73 @@ export default function MenuPage() {
     },
   };
 
-  const showReferenceRecipes = activeFilter === "Todos" && selectedDietaryTag === "Todos" && searchQuery.trim() === "";
+  const requireAuthentication = () => {
+    if (isAuthenticated) return true;
+    setAuthPromptOpen(true);
+    return false;
+  };
+
+  const openReservation = (dish: DishItem) => {
+    if (!requireAuthentication()) return;
+    const numericId = typeof dish.id === "number" ? dish.id : parseInt(String(dish.id).replace(/\D/g, ""), 10) || 999;
+    const existing = cart.find((item) => item.id === numericId);
+    const nextCart = existing
+      ? cart.map((item) => item.id === numericId ? { ...item, quantity: item.quantity + 1, residentialComplex: dish.residentialComplex } : item)
+      : [...cart, { id: numericId, dishId: String(dish.id), name: dish.name, cook: dish.cook, price: dish.price, image: dish.image, quantity: 1, residentialComplex: dish.residentialComplex }];
+    setCart(nextCart);
+    window.localStorage.setItem("ollacercana_menu_cart", JSON.stringify(nextCart));
+    router.push("/pedido");
+  };
+
+  const openOrder = () => {
+    if (!requireAuthentication()) return;
+    router.push("/pedido");
+  };
+
+  React.useEffect(() => {
+    const handleAssistantRequest = (event: Event) => {
+      const detail = (event as CustomEvent<{ intent: "add" | "reserve"; dish: string }>).detail;
+      const normalizedDish = detail.dish.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const dish = dynamicDishes.find((item) => {
+        const normalizedName = item.name.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return normalizedName === normalizedDish || normalizedName.includes(normalizedDish) || normalizedDish.includes(normalizedName);
+      });
+      const sendResult = (success: boolean, reason?: string) => window.dispatchEvent(new CustomEvent("ollacercana:assistant-result", { detail: { ...detail, success, reason } }));
+
+      if (!dish) {
+        sendResult(false, "not-found");
+        return;
+      }
+      if (dish.status !== "DISPONIBLE" || dish.availablePortions <= 0) {
+        sendResult(false, "unavailable");
+        return;
+      }
+      if (!requireAuthentication()) {
+        sendResult(false, "login");
+        return;
+      }
+      if (detail.intent === "add") addToCart(dish);
+      else openReservation(dish);
+      sendResult(true);
+    };
+
+    window.addEventListener("ollacercana:assistant-request", handleAssistantRequest);
+    return () => window.removeEventListener("ollacercana:assistant-request", handleAssistantRequest);
+  }, [dynamicDishes, isAuthenticated]);
+
+  React.useEffect(() => {
+    if (!cartReady) return;
+    const params = new URLSearchParams(window.location.search);
+    const intent = params.get("ayudaAccion");
+    const dish = params.get("plato");
+    if ((intent !== "add" && intent !== "reserve") || !dish) return;
+
+    // Consume the request before firing it so a rerender cannot repeat the action.
+    window.history.replaceState(null, "", "/menu");
+    window.dispatchEvent(new CustomEvent("ollacercana:assistant-request", { detail: { intent, dish } }));
+  }, [cartReady, dynamicDishes, isAuthenticated]);
+
+  const showReferenceRecipes = activeFilter === "Todos" && selectedDietaryTag === "Todos" && searchQuery.trim() === "" && !availableOnly && sortBy === "recommended" && withinTwoKm && minimumRating === 0 && reviewSentiment === "all" && !featuredCooksOnly;
   const sideRecipeDish = showReferenceRecipes ? filteredDishes.find((dish) => dish.name === "Lentejas con arroz") : undefined;
   const mainRecipeDishes = showReferenceRecipes
     ? filteredDishes.filter((dish) => dish.name !== "Lentejas con arroz")
@@ -382,10 +502,19 @@ export default function MenuPage() {
   ];
 
   const renderRecipeCard = (name: string, dish?: DishItem, compact = false, featured = false, lowerRow = false) => {
-    const note = recipeNotes[name];
+    const sameCommunity = Boolean(dish && sharesResidentialComplex(currentUser.residentialComplex, dish.residentialComplex));
+    const isSeedRecipe = /^dish-[1-6]$/.test(dish?.id ?? "");
+    const note = (isSeedRecipe ? recipeNotes[name] : undefined) ?? (dish ? {
+      badge: dish.badge || "De la cocina del barrio",
+      ingredients: [],
+      steps: [],
+      price: dish.formattedPrice,
+      phrase: `Preparado por ${dish.cook}`,
+      image: dish.image,
+    } : undefined);
     if (!note) return null;
     const image = note.image;
-    const price = note.price || dish?.formattedPrice || `$${dish?.price.toLocaleString("es-CO") ?? ""}`;
+    const price = dish?.formattedPrice || note.price || `$${dish?.price.toLocaleString("es-CO") ?? ""}`;
 
     return (
       <article
@@ -409,16 +538,10 @@ export default function MenuPage() {
             </div>
           </div>
 
-          <div className={`relative mt-1 grid gap-1.5 ${compact ? "grid-cols-[minmax(0,1fr)_64px] xl:grid-cols-[minmax(0,1fr)_92px]" : "grid-cols-[minmax(0,1fr)_70px] xl:grid-cols-[minmax(0,1fr)_104px]"}`}>
-            <div className={`min-w-0 font-['Caveat',cursive] ${compact || featured ? "text-[10px] leading-[.94]" : "text-[11px] leading-[.96]"}`}>
-              <h4 className="mb-0.5 font-bold underline decoration-[#806747] underline-offset-2">Ingredientes:</h4>
-              {note.ingredients.length ? (
-                <ul className="space-y-[1px]">
-                  {note.ingredients.map((ingredient) => <li key={ingredient} className="flex gap-1"><span>–</span><span>{ingredient}</span></li>)}
-                </ul>
-              ) : (
-                <p>{dish?.description || ""}</p>
-              )}
+          <div className={`relative mt-1 grid items-center gap-2 ${compact ? "grid-cols-[minmax(0,1fr)_64px] xl:grid-cols-[minmax(0,1fr)_92px]" : "grid-cols-[minmax(0,1fr)_70px] xl:grid-cols-[minmax(0,1fr)_104px]"}`}>
+            <div className={`min-w-0 font-['Caveat',cursive] ${compact || featured ? "text-[12px] leading-tight" : "text-[13px] leading-tight"}`}>
+              <p className="line-clamp-1 text-[#5b4a38]">{dish?.description || `Preparado en casa por ${dish?.cook || "una cocinera del barrio"}.`}</p>
+              {dish ? <Link href={`/cocineras/${dish.cookId}`} className="mt-1 block truncate text-[12px] font-bold text-[#52663d] underline decoration-dotted underline-offset-2 hover:text-[#a84029]">Por {dish.cook}</Link> : <p className="mt-1 truncate text-[12px] font-bold text-[#52663d]">Por cocina vecina</p>}
             </div>
             <div className={`relative mt-2 overflow-hidden rounded-[47%_53%_51%_49%/45%_42%_58%_55%] border-[3px] border-[#6b5037] bg-[#e6d4b0] shadow-[0_3px_5px_rgba(66,43,24,.25)] ${compact ? "h-[64px] w-[64px] xl:h-[92px] xl:w-[92px]" : "h-[70px] w-[70px] xl:h-[104px] xl:w-[104px]"}`}>
               {image ? (
@@ -431,16 +554,36 @@ export default function MenuPage() {
             </div>
           </div>
 
-          <div className={`mt-1 border-t border-dashed border-[#aa8b5e] pt-1 font-['Caveat',cursive] ${compact || featured ? "text-[10px] leading-[.94]" : "text-[11px] leading-[.96]"}`}>
-            <h4 className="mb-0.5 font-bold underline decoration-[#806747] underline-offset-2">Preparación:</h4>
-            <ol className="space-y-[1px]">
-              {note.steps.map((step, index) => <li key={step} className="flex gap-1"><span className="shrink-0">{index + 1}.</span><span>{step}</span></li>)}
-            </ol>
+          {dish && (
+            <button type="button" onClick={() => setRecipeToShow(name)} className="mt-1 self-start border-b border-dashed border-[#806747] font-['Caveat',cursive] text-sm font-bold text-[#6a5037] transition hover:text-[#a84029] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C84B31]">
+              Ver en el recetario →
+            </button>
+          )}
+
+          {/* Trust Seal: Hygienic Verification */}
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-[#75865a]/60 bg-[#dce4ce] px-2 py-0.5 text-[10px] font-bold text-[#42542e]">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+              <span>Cocina limpia & manipulación verificada</span>
+            </div>
+            {dish && <OllaVerdeStamp residentialComplex={dish.residentialComplex} compact={compact} />}
+            {sameCommunity && <span title={`Cocinera y comprador pertenecen a ${dish?.residentialComplex}`} className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#687a49] bg-[#f2edcf] px-2 py-0.5 text-[10px] font-extrabold text-[#43552e]"><Home className="h-3 w-3" /> Mismo conjunto</span>}
           </div>
+
+          {dish && <div className="mt-1 grid grid-cols-2 gap-1 rounded-lg border border-[#aa8b5e] bg-[#f7eddb] p-1.5 font-sans text-[10px] leading-tight text-[#493323]">
+            <div className="flex min-w-0 items-start gap-1.5 rounded-md bg-white/65 px-1.5 py-1">
+              <MapPin className="mt-px h-3.5 w-3.5 shrink-0 text-[#a84029]" />
+              <span className="min-w-0"><span className="block font-semibold text-[#80694d]">Distancia aproximada</span><span className="block truncate font-bold">{dish.distance?.trim() || "Por confirmar"}</span></span>
+            </div>
+            <div className="flex min-w-0 items-start gap-1.5 rounded-md bg-white/65 px-1.5 py-1">
+              <Home className="mt-px h-3.5 w-3.5 shrink-0 text-[#52663d]" />
+              <span className="min-w-0"><span className="block font-semibold text-[#80694d]">Conjunto</span><span className="block truncate font-bold" title={dish.residentialComplex}>{dish.residentialComplex?.trim() || "Por confirmar"}</span></span>
+            </div>
+          </div>}
 
           <div className="mt-auto flex items-end justify-between gap-2 border-t border-dashed border-[#aa8b5e] pt-1.5">
             {dish ? (
-              <button onClick={() => setReserveModalDish(dish)} title="Reservar porciones (HU-11)" className={`font-['Caveat',cursive] font-bold leading-none text-[#5b3020] underline decoration-[#5b3020] decoration-1 underline-offset-2 ${compact ? "text-[22px]" : "text-[25px]"}`}>
+              <button onClick={() => openReservation(dish)} aria-label={`Reservar ${dish.name} por ${price} por porción`} title="Consultar disponibilidad y reservar" className={`font-['Caveat',cursive] font-bold leading-none text-[#5b3020] underline decoration-[#5b3020] decoration-1 underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C84B31] ${compact ? "text-[22px]" : "text-[25px]"}`}>
                 {price}
               </button>
             ) : (
@@ -448,6 +591,28 @@ export default function MenuPage() {
             )}
             <span className="font-['Caveat',cursive] text-[13px] leading-none text-[#5b4a38]">/ Porción</span>
           </div>
+
+          {/* Las acciones de pedido y reserva permanecen dentro de OllaCercana. */}
+          {dish && (
+            <div className="mt-2 flex items-center justify-between gap-1.5 pt-1.5 border-t border-dashed border-[#aa8b5e]">
+              <button
+                onClick={() => addToCart(dish)}
+                className="flex-1 py-1.5 px-2.5 rounded-full bg-[#C84B31] hover:bg-[#a83e29] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition-all active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Añadir</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openReservation(dish)}
+                className="flex-1 rounded-full border border-[#75865a]/60 bg-[#dce4ce] px-2.5 py-1.5 text-xs font-bold text-[#42542e] shadow-sm transition-all hover:bg-[#cdd9b9] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#42542e]"
+                aria-label={`Reservar ${dish.name} con ${dish.cook}`}
+              >
+                Reservar
+              </button>
+            </div>
+          )}
+
           <div className={`mt-1 flex items-center gap-1 font-['Caveat',cursive] italic leading-none text-[#5b4a38] ${compact ? "text-[12px]" : "text-[15px]"}`}>
             <Heart className="h-3.5 w-3.5 shrink-0 stroke-[1.7]" />
             <span>{note.phrase}</span>
@@ -465,7 +630,7 @@ export default function MenuPage() {
   };
 
   return (
-    <div data-menu-theme={menuTheme} className="menu-theme-root relative min-h-screen overflow-x-clip bg-[#cba679] font-['Patrick_Hand',cursive] text-[#35251a] selection:bg-[#C84B31] selection:text-white">
+    <div data-theme-page data-menu-theme={menuTheme} className="menu-theme-root relative min-h-screen overflow-x-clip bg-[#cba679] font-['Patrick_Hand',cursive] text-[#35251a] selection:bg-[#C84B31] selection:text-white">
       <style jsx global>{`
         [data-menu-theme="dark"] { color-scheme: dark; }
         [data-menu-theme="dark"] .menu-paper {
@@ -505,15 +670,14 @@ export default function MenuPage() {
           </Link>
 
           {/* Location Selector */}
-          <div className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-[#b99770]/65 bg-[#f6ead4]/75 px-3 py-1.5 text-xs font-semibold text-[#453321] transition-colors hover:bg-[#fff6e8] sm:flex">
+          <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-[#b99770]/65 bg-[#f6ead4]/75 px-3 py-1.5 text-xs font-semibold text-[#453321] sm:flex" aria-label="Zona de muestra">
             <MapPin className="w-3.5 h-3.5 text-[#C84B31]" />
-            <span>Bogotá · Tu barrio</span>
-            <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
+            <span>Bogotá · Zona de muestra</span>
           </div>
 
           <label className="relative hidden min-w-[180px] max-w-[270px] flex-1 lg:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#795f43]" />
-            <input type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Busca un plato..." className="w-full rounded-full border border-[#b99770]/60 bg-[#fff7e9]/75 py-2 pl-9 pr-3 font-['Patrick_Hand',cursive] text-sm text-[#493323] placeholder:text-[#80694d] focus:outline-none focus:ring-2 focus:ring-[#c84b31]/50" />
+            <input aria-label="Buscar platos" type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Busca un plato..." className="w-full rounded-full border border-[#b99770]/60 bg-[#fff7e9]/75 py-2 pl-9 pr-3 font-['Patrick_Hand',cursive] text-sm text-[#493323] placeholder:text-[#80694d] focus:outline-none focus:ring-2 focus:ring-[#c84b31]/50" />
           </label>
 
           {/* Center Search Link & Nav */}
@@ -532,6 +696,10 @@ export default function MenuPage() {
               <CookingPot className="w-3.5 h-3.5" />
               <span>Cocinas cercanas</span>
             </Link>
+            <Link href="/cocineras" className="flex items-center gap-1.5 hover:text-[#C84B31] transition-colors">
+              <Users className="w-3.5 h-3.5" />
+              <span>Nuestras cocineras</span>
+            </Link>
             <Link
               href="/cuenta/reservas"
               className="flex items-center gap-1.5 hover:text-[#C84B31] transition-colors"
@@ -543,15 +711,16 @@ export default function MenuPage() {
 
           {/* Right User Actions */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
-            <button type="button" onClick={() => setMenuTheme((current) => current === "light" ? "dark" : "light")} aria-label={menuTheme === "light" ? "Activar modo oscuro" : "Activar modo claro"} title={menuTheme === "light" ? "Modo oscuro" : "Modo claro"} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#b99770]/60 bg-[#fff7e9]/75 text-[#493323] transition-colors hover:bg-[#fff6e8] sm:h-9 sm:w-9">
-              {menuTheme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </button>
+            <Link href="/cuenta/ajustes" aria-label="Abrir ajustes" title="Ajustes" className="flex h-8 w-8 items-center justify-center rounded-full border border-[#b99770]/60 bg-[#fff7e9]/75 text-[#493323] transition-colors hover:bg-[#fff6e8] sm:h-9 sm:w-9">
+              <Settings className="h-4 w-4" />
+            </Link>
             {/* Cart Icon */}
             <a
               href="#cart-section"
+              aria-label={`Ir a tu pedido. ${totalCartCount} porciones en la canasta.`}
               className="relative rounded-full border border-[#b99770]/60 bg-[#fff7e9]/75 p-1.5 text-[#453321] transition-colors hover:bg-[#fff6e8] sm:p-2"
             >
-                <Bell className="h-4 w-4 text-[#493323] sm:h-5 sm:w-5" />
+                <ShoppingBag className="h-4 w-4 text-[#493323] sm:h-5 sm:w-5" />
               {totalCartCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-white bg-[#C84B31] text-[10px] font-bold text-white shadow-xs">
                   {totalCartCount}
@@ -683,13 +852,13 @@ export default function MenuPage() {
                   <Flame className="w-5 h-5 text-[#F0822D]" />
                   <h3 className="font-['Caveat',cursive] text-2xl font-bold text-[#493323]">Antojo del Día</h3>
                   <span className="text-xs bg-[#dce4ce] text-[#52663d] border border-[#75865a]/50 px-2.5 py-0.5 rounded-full font-bold">
-                    8 Cocineras cerca de ti
+                    Platos de cocinas cercanas
                   </span>
                 </div>
                 <span className="text-xs text-[#80694d] font-['Patrick_Hand',cursive] hidden sm:inline">Disponibles ahora mismo</span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-1.5 scrollbar-none">
                 {[
                   { name: "Doña Rosa", dish: "Ajiaco de la casa", dist: "350 m", rating: "4,9", img: "/images/dona_rosa_mascot.jpg" },
                   { name: "Don Carlos", dish: "Bandeja casera", dist: "600 m", rating: "4,8", img: "/images/abuelita_3d_mascot.jpg" },
@@ -702,7 +871,7 @@ export default function MenuPage() {
                 ].map((cook, idx) => (
                   <div
                     key={idx}
-                    className="menu-paper menu-subpaper relative bg-[#f5e9d2] border border-[#c4a77d] hover:border-[#C84B31]/70 p-3 shadow-[0_4px_8px_rgba(73,47,25,.16)] flex flex-col justify-between transition-all group"
+                    className="menu-paper menu-subpaper relative min-w-[170px] max-w-[180px] shrink-0 bg-[#f5e9d2] border border-[#c4a77d] hover:border-[#C84B31]/70 p-2.5 shadow-[0_3px_6px_rgba(73,47,25,.14)] flex flex-col justify-between transition-all group"
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -712,33 +881,39 @@ export default function MenuPage() {
                         </span>
                       </div>
                       <div>
-                        <h4 className="font-['Caveat',cursive] text-base font-bold text-[#2b2117] group-hover:text-[#a84029] transition-colors">{cook.name}</h4>
-                        <p className="text-[11px] text-[#5b4a38] line-clamp-1">{cook.dish}</p>
+                        <h4 className="font-['Caveat',cursive] text-base font-bold text-[#2b2117] group-hover:text-[#a84029] transition-colors">{cook.dish}</h4>
+                        <p className="text-[11px] text-[#5b4a38] line-clamp-1">Cocina de {cook.name}</p>
                         <span className="text-[10px] text-[#80694d] block mt-0.5">A {cook.dist}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        const foundDish = dishes.find((d) => d.cook === cook.name) || dishes[0];
-                        addToCart(foundDish);
-                        setOrderModalOpen(true);
-                      }}
-                      className="mt-2 w-full py-1.5 rounded-full bg-[#C84B31] hover:bg-[#a83e29] text-white font-bold text-[11px] transition-all cursor-pointer shadow-sm"
-                    >
-                      Pedir Antojo
-                    </button>
+                    {dynamicDishes.find((d) => d.cook === cook.name) ? (
+                      <button
+                        onClick={() => {
+                          const foundDish = dynamicDishes.find((d) => d.cook === cook.name);
+                          if (!foundDish) return;
+                          openReservation(foundDish);
+                        }}
+                        className="mt-2 w-full rounded-full bg-[#C84B31] py-1.5 text-[11px] font-bold text-white shadow-sm transition-all hover:bg-[#a83e29] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b2117]"
+                      >
+                        Agregar al pedido
+                      </button>
+                    ) : (
+                      <Link href="/cocineras-cercanas" className="mt-2 w-full rounded-full border border-[#80694d]/50 bg-[#fff7e9]/70 py-1.5 text-center text-[11px] font-bold text-[#493323] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C84B31]">
+                        Ver cocinas
+                      </Link>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
 
             {/* ── 3. SEARCH & FILTERS ROW ── */}
-            <div id="explorar" className="flex flex-col items-start justify-between gap-3 lg:flex-row lg:items-center">
+            <div id="explorar" className="flex w-full flex-col items-stretch gap-3">
               <label className="relative block w-full lg:hidden">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#795f43]" />
-                <input type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Busca un plato..." className="w-full rounded-full border border-[#b99770]/60 bg-[#fff7e9]/85 py-2 pl-9 pr-3 font-['Patrick_Hand',cursive] text-sm text-[#493323] placeholder:text-[#80694d] focus:outline-none focus:ring-2 focus:ring-[#c84b31]/50" />
+                <input aria-label="Buscar platos" type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Busca un plato..." className="w-full rounded-full border border-[#b99770]/60 bg-[#fff7e9]/85 py-2 pl-9 pr-3 font-['Patrick_Hand',cursive] text-sm text-[#493323] placeholder:text-[#80694d] focus:outline-none focus:ring-2 focus:ring-[#c84b31]/50" />
               </label>
-              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex w-full flex-wrap items-center justify-between gap-2 pb-1">
                 {[
                   { id: "Todos", label: "Todos", icon: Utensils },
                   { id: "Almuerzos", label: "Almuerzos", icon: Utensils },
@@ -748,37 +923,85 @@ export default function MenuPage() {
                   { id: "Filtros", label: "Filtros", icon: SlidersHorizontal },
                 ].map((btn) => {
                   const Icon = btn.icon;
-                  const isActive = activeFilter === btn.id;
+                  const isActive = btn.id === "Filtros" ? filtersOpen : activeFilter === btn.id;
                   return (
                     <button
                       key={btn.id}
-                      onClick={() => setActiveFilter(btn.id)}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition-all ${
+                      onClick={() => btn.id === "Filtros" ? setFiltersOpen((open) => !open) : setActiveFilter(btn.id)}
+                      aria-expanded={btn.id === "Filtros" ? filtersOpen : undefined}
+                      className={`flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all ${
                         isActive
                           ? "bg-[#C84B31] text-white shadow-md shadow-red-950/20"
                           : "border border-white/70 bg-white/55 text-[#493323] hover:bg-white/85"
                       }`}
                     >
-                      <Icon className={`h-3 w-3 ${isActive ? "text-white" : "text-[#C84B31]"}`} />
+                      <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-[#C84B31]"}`} />
                       <span>{btn.label}</span>
                     </button>
                   );
                 })}
               </div>
-              <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#f6e8cf]/90 bg-[#f8ecd7]/45 px-2.5 py-1.5 text-[11px] font-semibold text-[#fff7e9] shadow-sm">
-                <MapPin className="h-3.5 w-3.5" />
-                <span>Cocinas a menos de 2 km</span>
-              </div>
             </div>
 
-            {/* ── DIETARY TAGS FILTER ROW (HU-08) ── */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
-              <span className="shrink-0 font-bold text-[#57412b]">Etiquetas Dietéticas (HU-06):</span>
+            {filtersOpen && (
+              <div className="menu-paper grid grid-cols-1 gap-4 rounded-xl border border-[#b99770]/70 bg-[#fff7e9]/95 p-4 text-sm text-[#493323] shadow-lg sm:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Opciones de filtro">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#d8c39c] bg-white/65 px-3 py-2">
+                  <input type="checkbox" checked={availableOnly} onChange={(event) => setAvailableOnly(event.target.checked)} className="accent-[#C84B31]" />
+                  Solo platos disponibles
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#d8c39c] bg-white/65 px-3 py-2">
+                  <input type="checkbox" checked={withinTwoKm} onChange={(event) => setWithinTwoKm(event.target.checked)} className="accent-[#C84B31]" />
+                  Cocinas a menos de 2 km
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#d8c39c] bg-white/65 px-3 py-2">
+                  <input type="checkbox" checked={featuredCooksOnly} onChange={(event) => setFeaturedCooksOnly(event.target.checked)} className="accent-[#C84B31]" />
+                  <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-amber-500 text-amber-600" /> Solo cocineras destacadas</span>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold">Ordenar platos</span>
+                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} className="rounded-lg border border-[#b99770] bg-white px-3 py-2 text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                    <option value="recommended">Recomendados</option>
+                    <option value="rating-desc">Mejor promedio de estrellas</option>
+                    <option value="reviews-desc">Más calificaciones</option>
+                    <option value="price-asc">Menor precio</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold">Calificación mínima</span>
+                  <select value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))} className="rounded-lg border border-[#b99770] bg-white px-3 py-2 text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                    <option value={0}>Todas las estrellas</option>
+                    <option value={4}>4 estrellas o más</option>
+                    <option value={3}>3 estrellas o más</option>
+                    <option value={2}>2 estrellas o más</option>
+                    <option value={1}>1 estrella o más</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold">Opiniones de la cocinera</span>
+                  <select value={reviewSentiment} onChange={(event) => setReviewSentiment(event.target.value as typeof reviewSentiment)} className="rounded-lg border border-[#b99770] bg-white px-3 py-2 text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                    <option value="all">Todas las opiniones</option>
+                    <option value="positive">Con opiniones positivas (4–5★)</option>
+                    <option value="negative">Con opiniones negativas (1–2★)</option>
+                  </select>
+                </label>
+                <p className="self-center text-xs leading-relaxed text-[#725d48] sm:col-span-2">
+                  Las opiniones se consultan por cocinera, porque las reseñas actuales no están asociadas a un plato específico. “Destacada” usa el mismo criterio visible en su perfil: promedio de 4,8 o más y al menos 3 opiniones publicadas.
+                </p>
+                <button type="button" onClick={() => { setAvailableOnly(false); setWithinTwoKm(true); setSortBy("recommended"); setMinimumRating(0); setReviewSentiment("all"); setFeaturedCooksOnly(false); }} className="w-fit self-center rounded-full px-3 py-2 font-semibold text-[#a84029] underline decoration-dotted underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                  Limpiar filtros
+                </button>
+              </div>
+            )}
+
+            {/* Dietary preferences; these tags are informational, not allergy guarantees. */}
+            <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 pb-1 text-sm">
+              <span className="mr-1 shrink-0 font-bold text-[#57412b]">Opciones de alimentación:</span>
               {["Todos", "Vegetariano", "Sin Gluten", "Sin Lactosa", "Vegano"].map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setSelectedDietaryTag(tag)}
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                  aria-pressed={selectedDietaryTag === tag}
+                  className={`min-h-9 shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
                     selectedDietaryTag === tag
                       ? "bg-[#F0822D] text-white shadow-sm"
                       : "border border-white/75 bg-white/55 text-[#493323] hover:bg-white/85"
@@ -791,7 +1014,7 @@ export default function MenuPage() {
             {/* Section Heading */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e0c49a]/70 pb-2">
               <div className="space-y-1">
-                <h2 className="flex items-center gap-3 font-['Caveat',cursive] text-3xl font-bold text-[#2c1b10] drop-shadow-sm md:text-4xl">
+                <h2 className="flex items-center gap-3 font-['Caveat',cursive] text-4xl font-bold text-[#2c1b10] drop-shadow-sm md:text-5xl">
                   <span>¿Qué se te antoja hoy?</span>
                   <svg aria-hidden="true" viewBox="0 0 54 12" className="mt-2 h-3 w-14 text-[#C84B31]">
                     <path d="M2 8 C12 2, 19 10, 29 5 S44 4, 52 5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -804,7 +1027,15 @@ export default function MenuPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {mainRecipeDishes.map((dish, index) => renderRecipeCard(dish.name, dish, index >= 3, index < 3, index >= 3))}
               {showReferenceRecipes && renderRecipeCard("Arepas con queso", undefined, true, false, true)}
+              {filteredDishes.length === 0 && (
+                <div className="menu-paper col-span-full rounded-xl border border-[#b99770]/70 bg-[#fff7e9]/90 p-6 text-center text-[#493323]" role="status">
+                  <p className="font-['Caveat',cursive] text-2xl font-bold">No encontramos platos con esa búsqueda.</p>
+                  <p className="mt-1 text-sm">Prueba otro nombre o limpia los filtros para ver más opciones.</p>
+                  <button type="button" onClick={() => { setSearchQuery(""); setActiveFilter("Todos"); setSelectedDietaryTag("Todos"); setAvailableOnly(false); setSortBy("recommended"); setWithinTwoKm(true); }} className="mt-3 rounded-full bg-[#C84B31] px-4 py-2 text-sm font-bold text-white hover:bg-[#a83e29] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b2117]">Mostrar todos los platos</button>
+                </div>
+              )}
             </div>
+            <p className="menu-paper -mt-2 rounded-lg border border-[#b99770]/60 bg-[#fff7e9]/85 px-3 py-2 text-[11px] leading-snug text-[#493323] sm:text-xs">Si tienes una alergia, confirma ingredientes y posibles trazas directamente con quien cocina antes de reservar.</p>
 
             {/* Kept mounted as the original listing markup so its existing actions remain available. */}
             <div className="hidden grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 md:gap-4">
@@ -898,20 +1129,22 @@ export default function MenuPage() {
                         <p className="text-xs font-bold text-stone-900 truncate leading-tight group-hover/cook:text-[#F0822D]">
                           {dish.cook} <span className="text-[10px] text-amber-600 underline">Ver Reputación</span>
                         </p>
-                        <div className="flex items-center gap-1.5 text-[11px] text-stone-600 font-medium pt-0.5">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-stone-600 font-medium pt-0.5">
                           <span className="flex items-center gap-0.5 text-amber-600 font-semibold">
                             <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
                             {dish.rating} ({dish.reviews})
                           </span>
                           <span className="text-stone-300">•</span>
-                          <span className="truncate">📍 {dish.distance}</span>
+                          <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3 shrink-0 text-[#a84029]" />Distancia aprox. {dish.distance}</span>
                         </div>
+                        <p className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-[10px] font-medium text-stone-600" title={dish.residentialComplex}><Home className="h-3 w-3 shrink-0 text-[#52663d]" /><span className="truncate">{dish.residentialComplex || "Conjunto por confirmar"}</span></p>
+                        {sharesResidentialComplex(currentUser.residentialComplex, dish.residentialComplex) && <span title="Esta cocinera pertenece a tu conjunto" className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-[#687a49] bg-[#f2edcf] px-2 py-0.5 text-[9px] font-extrabold text-[#43552e]"><Home className="h-3 w-3" /> Del mismo conjunto</span>}
                       </div>
                     </div>
 
                     {/* Reserve Portion Button (HU-11, HU-14) */}
                     <button
-                      onClick={() => setReserveModalDish(dish)}
+                      onClick={() => openReservation(dish)}
                       className="px-3 py-2 rounded-full bg-[#F0822D] hover:bg-[#d97224] text-white flex items-center justify-center gap-1 transition-all shadow-md active:scale-95 shrink-0 text-xs font-bold"
                       title="Reservar porciones (HU-11)"
                     >
@@ -935,7 +1168,7 @@ export default function MenuPage() {
               <div className="absolute top-2 right-6 w-3 h-3 rounded-full bg-[#b78a59] border border-[#765638]" />
 
               <span className="font-['Caveat',cursive] text-2xl font-bold text-[#2b2117] block">
-                Nuestra Mascota
+                Ubica tu antojo
               </span>
 
               {/* Official 3D Pixar Mascot Character Portrait */}
@@ -961,7 +1194,8 @@ export default function MenuPage() {
                 href="/cocineras-cercanas"
                 className="w-full py-2.5 rounded-full bg-[#C84B31] hover:bg-[#a83e29] text-white font-bold text-xs uppercase tracking-wider transition-all inline-flex items-center justify-center gap-2 shadow-md"
               >
-                <span>Conócela →</span>
+                <MapPin className="w-4 h-4" />
+                <span>Ver Mapa →</span>
               </Link>
             </div>
 
@@ -1076,7 +1310,7 @@ export default function MenuPage() {
               {/* CTA Button */}
               <button
                 disabled={cart.length === 0}
-                onClick={() => setOrderModalOpen(true)}
+                onClick={openOrder}
                 className={`w-full py-2.5 rounded-full font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg ${
                   cart.length > 0
                     ? "bg-[#b8442c] hover:bg-[#9b3824] text-white cursor-pointer rotate-[-1deg]"
@@ -1094,7 +1328,7 @@ export default function MenuPage() {
       </main>
 
       {/* ── 5. INFINITE COOK & DISH MARQUEE SECTION ── */}
-      <section className="menu-paper relative z-10 mx-3 my-12 w-auto overflow-hidden border border-[#9b774f] bg-[#e8d1a3]/95 py-12 text-[#2b2117] shadow-[0_14px_30px_rgba(46,27,13,.34),inset_0_0_24px_rgba(117,78,38,.14)] md:mx-8 [clip-path:polygon(1%_1%,98%_0%,100%_2%,99%_98%,97%_100%,2%_99%,0%_97%,1%_3%)]">
+      <section className="hidden">
         <div aria-hidden="true" className="absolute left-1/2 top-0 z-20 h-7 w-28 -translate-x-1/2 -rotate-2 border-x border-[#b99655]/70 bg-[#d6b776]/90 shadow-sm" />
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center space-y-3 mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-[#52663d] inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full bg-[#dce4ce] border border-[#75865a]/50">
@@ -1152,287 +1386,139 @@ export default function MenuPage() {
         </div>
       </section>
 
-      {/* ── 6. BENTO GRID SECTION (EXACT STRUCTURAL LAYOUT REFERENCE MATCH) ── */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-12 space-y-8 text-[#2b2117]">
-        
-        {/* Bento Row 1: Large Top Hero Highlight Card (Studio Pley Stuodic -> Experiencia OllaCercana) */}
-        <div className="menu-paper relative overflow-hidden border border-[#9b774f] bg-[#e8d1a3] p-8 shadow-[0_14px_30px_rgba(46,27,13,.34),inset_0_0_26px_rgba(117,78,38,.14)] [clip-path:polygon(1%_1%,98%_0%,100%_2%,99%_98%,97%_100%,2%_99%,0%_97%,1%_3%)] flex flex-col md:flex-row items-center justify-between gap-8 md:p-12">
-          <div aria-hidden="true" className="absolute left-1/2 top-0 z-20 h-7 w-24 -translate-x-1/2 -rotate-2 border-x border-[#b99655]/70 bg-[#d6b776]/90 shadow-sm" />
-          <div className="space-y-4 max-w-xl text-left z-10">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#a84029] px-3.5 py-1 bg-[#f3ddc2] border border-[#c88359]/50 inline-block">
-              COMIDA DE CASA • A UN PASO DE TU PUERTA
-            </span>
-            <h2 className="font-['Caveat',cursive] text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#2b2117] leading-tight">
-              Experiencia OllaCercana: <br />
-              <span className="text-[#52663d]">Sabor Auténtico de Barrio</span>
-            </h2>
-            <p className="text-[#5b4a38] text-xs sm:text-sm leading-relaxed">
-              Conectamos el sazón tradicional de las cocineras de tu conjunto residencial con vecinos que buscan almuerzos saludables, caseros y recién hechos todos los días.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2">
-              <button
-                onClick={() => {
-                  const el = document.getElementById("explorar");
-                  el?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="px-6 py-3 rounded-full bg-[#F0822D] hover:bg-[#d97224] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-orange-950/40 cursor-pointer"
-              >
-                Explorar Platos del Día
-              </button>
-              <Link
-                href="/cocineras-cercanas"
-                className="px-6 py-3 rounded-full bg-[#dce4ce] border border-[#75865a]/60 text-[#52663d] hover:bg-[#cdd9b9] font-bold text-xs uppercase tracking-wider transition-all"
-              >
-                Conocer Cocineras →
-              </Link>
-            </div>
-          </div>
+      {/* ── 6. CÓMO FUNCIONA LA COMUNIDAD Y SUS RECONOCIMIENTOS ── */}
+      <section id="olla-verde" className="relative z-10 mx-auto max-w-7xl space-y-6 px-4 py-10 text-[#2b2117] md:px-8" aria-labelledby="comunidad-title">
+        <div className="relative isolate min-h-[430px] overflow-hidden rounded-[26px] border-[5px] border-[#d6bd91] bg-[#342319] shadow-[0_16px_34px_rgba(46,27,13,.32)] md:min-h-[390px]">
+          <Image src="/images/kitchen_background.jpg" alt="Cocina cálida de casa con mesa de madera" fill sizes="(max-width: 768px) 100vw, 1200px" className="object-cover object-center" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#24180f]/90 via-[#24180f]/65 to-[#24180f]/15" />
+          <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#24180f]/55 to-transparent" />
 
-          {/* Right Visual Element (Pot Graphic / Hero Dish Plate) */}
-          <div className="relative w-64 h-64 sm:w-72 sm:h-72 overflow-hidden border-[5px] border-[#d6bd91] shadow-[0_8px_18px_rgba(46,27,13,.28)] shrink-0 group">
-            <img src="/images/hero_plate_gourmet.jpg" alt="Pollo Dorado al Romero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2b2117]/80 via-transparent to-transparent flex items-end p-4">
-              <span className="text-xs font-bold text-[#f3ddc2] font-['Caveat',cursive] text-lg">
-                Receta de la Abuela Luisa ♡
+          <div className="relative z-10 grid min-h-[430px] items-end gap-7 p-5 sm:p-8 md:min-h-[390px] md:grid-cols-[1fr_310px] md:items-center md:p-10">
+            <div className="max-w-xl pb-1 text-left text-[#fff4dc]">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#fff0d1]/35 bg-[#22170f]/35 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-[#f1d59b] backdrop-blur-sm">
+                <Home className="h-3.5 w-3.5" /> Una cocina en cada cuadra
               </span>
+              <h2 id="comunidad-title" className="mt-4 font-['Caveat',cursive] text-5xl font-bold leading-[.92] drop-shadow-md sm:text-6xl md:text-7xl">
+                El sabor de casa,<br /><span className="text-[#f3cf83]">más cerca.</span>
+              </h2>
+              <p className="mt-4 max-w-lg text-sm leading-relaxed text-[#fff5e2]/95 sm:text-base">
+                Descubre lo que preparan tus vecinas, reserva tu porción en OllaCercana y comparte la mesa con tu comunidad.
+              </p>
+              <button type="button" onClick={() => document.getElementById("explorar")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#f7c269] bg-[#bd492c] px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-[#a83e29] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                <Utensils className="h-4 w-4" /> Ver platos del día <ChevronDown className="h-4 w-4 -rotate-90" />
+              </button>
             </div>
+
+            <figure className="relative mx-auto w-full max-w-[290px] rotate-[1deg]">
+              <div className="relative aspect-[.92] overflow-visible bg-transparent">
+                <Image
+                  src="/images/sello_olla_verde.png"
+                  alt="Sello Olla Verde: distintivo del conjunto, meta compartida con vigencia de siete días"
+                  fill
+                  sizes="(max-width: 768px) 82vw, 290px"
+                  className="object-cover object-center drop-shadow-[0_12px_12px_rgba(20,13,8,.4)]"
+                />
+              </div>
+              <figcaption className="mt-3 rounded-lg border border-[#fff0d1]/25 bg-[#24180f]/65 px-3 py-2 text-center text-xs leading-relaxed text-[#fff4dc] backdrop-blur-sm">
+                Se obtiene cuando el conjunto vende todas las porciones publicadas durante la semana.
+              </figcaption>
+            </figure>
           </div>
         </div>
 
-        {/* Bento Row 2: 3 Even Columns (Horere Ckonus, Nobe Fis, Umramed Piliiee) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="menu-paper border border-[#bda078] bg-[#efe0c2] p-6 space-y-3 shadow-[0_8px_18px_rgba(46,27,13,.2)] text-left hover:border-[#C84B31]/60 transition-all">
-            <div className="w-10 h-10 bg-[#f3ddc2] border border-[#c88359]/50 flex items-center justify-center text-[#a84029]">
-              <Utensils className="w-5 h-5" />
+        <figure className="menu-paper overflow-hidden border-[5px] border-[#d6bd91] bg-[#efe0c2] p-2 shadow-[0_10px_24px_rgba(46,27,13,.22)] sm:p-3">
+          <figcaption className="flex flex-col gap-2 px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-3">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-[.16em] text-[#52663d]">La idea detrás del sello</span>
+              <p className="font-['Caveat',cursive] text-2xl font-bold leading-tight text-[#2b2117]">Una meta que se cocina entre todos</p>
             </div>
-            <h3 className="font-['Caveat',cursive] font-bold text-xl text-[#2b2117]">1. Explora el Libretón</h3>
-            <p className="text-xs text-[#5b4a38] leading-relaxed">
-              Consulta las ofertas diarias preparadas por las vecinas de tu sector cada mañana.
-            </p>
-            <span className="text-[11px] font-bold text-[#a84029] uppercase tracking-wider block pt-2">
-              Ver Menú del Día →
-            </span>
-          </div>
+            <button type="button" onClick={() => setStoryboardOpen(true)} className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-full border border-[#75865a]/60 bg-[#dce4ce] px-4 py-2 text-xs font-bold text-[#42542e] transition hover:bg-[#cdd9b9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#493323] sm:self-center">
+              <ZoomIn className="h-4 w-4" /> Ampliar lámina
+            </button>
+          </figcaption>
+          <button type="button" onClick={() => setStoryboardOpen(true)} aria-label="Ampliar la lámina sobre la comunidad Olla Verde" className="relative block aspect-[16/9] w-full overflow-hidden border border-[#ae9066] bg-[#f8f0e0] focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#52663d]">
+            <Image src="/images/olla_verde_storyboard.jpg" alt="Lámina ilustrada sobre Olla Verde, las cocineras del conjunto y el apoyo de los vecinos" fill sizes="(max-width: 1280px) 100vw, 1200px" className="object-cover transition-transform duration-500 hover:scale-[1.015]" />
+          </button>
+          <p className="px-3 pb-2 pt-2 text-center text-xs text-[#6e563b]">Del esfuerzo de las cocineras al reconocimiento compartido del vecindario.</p>
+        </figure>
 
-          <div className="menu-paper border border-[#bda078] bg-[#efe0c2] p-6 space-y-3 shadow-[0_8px_18px_rgba(46,27,13,.2)] text-left hover:border-[#75865a]/70 transition-all">
-            <div className="w-10 h-10 bg-[#dce4ce] border border-[#75865a]/50 flex items-center justify-center text-[#52663d]">
-              <ChefHat className="w-5 h-5" />
-            </div>
-            <h3 className="font-['Caveat',cursive] font-bold text-xl text-[#2b2117]">2. Reserva Tu Porción</h3>
-            <p className="text-xs text-[#5b4a38] leading-relaxed">
-              Sin intermediarios ni comisiones abusivas. Paga directo por Nequi o Efectivo.
-            </p>
-            <span className="text-[11px] font-bold text-[#52663d] uppercase tracking-wider block pt-2">
-              Reserva Fácil →
-            </span>
+        <div className="menu-paper relative overflow-hidden border border-[#bda078] bg-[#efe0c2] shadow-[0_8px_18px_rgba(46,27,13,.16)]">
+          <div className="flex flex-col gap-4 border-b border-dashed border-[#ae9066] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+            <div><span className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a84029]">Sencillo, como en casa</span><h3 className="font-['Caveat',cursive] text-3xl font-bold leading-tight">De la olla a tu mesa</h3></div>
+            <p className="max-w-md text-xs leading-relaxed text-[#5b4a38]">Todo ocurre dentro de OllaCercana: encuentras, reservas y acuerdas con la cocinera de tu zona.</p>
           </div>
-
-          <div className="menu-paper border border-[#bda078] bg-[#efe0c2] p-6 space-y-3 shadow-[0_8px_18px_rgba(46,27,13,.2)] text-left hover:border-[#C84B31]/60 transition-all">
-            <div className="w-10 h-10 bg-[#dce4ce] border border-[#75865a]/50 flex items-center justify-center text-[#52663d]">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-            <h3 className="font-['Caveat',cursive] font-bold text-xl text-[#2b2117]">3. Entrega Vecinal</h3>
-            <p className="text-xs text-[#5b4a38] leading-relaxed">
-              Recibe tu comida caliente en la portería o puerta de tu departamento.
-            </p>
-            <span className="text-[11px] font-bold text-[#a84029] uppercase tracking-wider block pt-2">
-              Sin Complicaciones →
-            </span>
-          </div>
+          <ol className="grid divide-y divide-dashed divide-[#ae9066] px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-4">
+            <li className="flex items-center gap-3 py-3 sm:px-4 sm:py-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#c88359]/60 bg-[#f3ddc2] font-['Caveat',cursive] text-xl font-bold text-[#a84029]">1</span><span className="text-xs leading-snug text-[#5b4a38]"><strong className="block text-sm text-[#2b2117]">Explora el libretón</strong>Conoce los platos y quién los cocina.</span></li>
+            <li className="flex items-center gap-3 py-3 sm:px-4 sm:py-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#75865a]/60 bg-[#dce4ce] font-['Caveat',cursive] text-xl font-bold text-[#52663d]">2</span><span className="text-xs leading-snug text-[#5b4a38]"><strong className="block text-sm text-[#2b2117]">Reserva tu porción</strong>Coordina los detalles por la plataforma.</span></li>
+            <li className="flex items-center gap-3 py-3 sm:px-4 sm:py-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#c4a77d] bg-[#f5e9d2] font-['Caveat',cursive] text-xl font-bold text-[#80694d]">3</span><span className="text-xs leading-snug text-[#5b4a38]"><strong className="block text-sm text-[#2b2117]">Disfruta y comparte</strong>Acuerda la entrega directamente con tu vecina.</span></li>
+          </ol>
         </div>
 
-        {/* Bento Row 3: 3 Image-Heavy Showcase Cards (Oescio, Pos, Wiveest) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="relative h-64 overflow-hidden border-[5px] border-[#d6bd91] shadow-[0_8px_18px_rgba(46,27,13,.25)] group">
-            <img src="/images/menu_ajiaco.jpg" alt="Ajiaco Santafereño" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2b2117]/90 via-[#2b2117]/25 to-transparent p-6 flex flex-col justify-end text-left">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#F0822D]">SOPAS TRADICIONALES</span>
-              <h4 className="font-bold text-lg text-white">Ajiaco Santafereño</h4>
-              <p className="text-xs text-stone-300 font-light">Pollo desmechado, 3 tipos de papa, guascas y alcaparras.</p>
-            </div>
+        <div className="flex flex-col gap-4 rounded-2xl border border-[#9b774f] bg-[#e8d1a3] px-5 py-4 shadow-[0_5px_14px_rgba(46,27,13,.14)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#c88359]/60 bg-[#f3ddc2] text-[#a84029]"><Heart className="h-5 w-5" /></span>
+            <div><span className="text-[10px] font-bold uppercase tracking-wider text-[#a84029]">Un guiño a quienes vuelven</span><p className="font-['Caveat',cursive] text-2xl font-bold leading-none">Vecino Fiel</p><p className="mt-1 text-xs text-[#5b4a38]">Completa tres entregas en un mes con la misma cocinera y gana la insignia.</p></div>
           </div>
-
-          <div className="relative h-64 overflow-hidden border-[5px] border-[#d6bd91] shadow-[0_8px_18px_rgba(46,27,13,.25)] group">
-            <img src="/images/menu_cazuela.jpg" alt="Bandeja Criolla" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2b2117]/90 via-[#2b2117]/25 to-transparent p-6 flex flex-col justify-end text-left">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#62B869]">PLATOS DE MONTAÑA</span>
-              <h4 className="font-bold text-lg text-white">Bandeja Criolla</h4>
-              <p className="text-xs text-stone-300 font-light">Carne jugosa, arroz fresco, plátano maduro y aguacate.</p>
-            </div>
-          </div>
-
-          <div className="relative h-64 overflow-hidden border-[5px] border-[#d6bd91] shadow-[0_8px_18px_rgba(46,27,13,.25)] group">
-            <img src="/images/dish_pollo_chalk.jpg" alt="Pollo Guisado" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2b2117]/90 via-[#2b2117]/25 to-transparent p-6 flex flex-col justify-end text-left">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">SAZÓN DE HOGAR</span>
-              <h4 className="font-bold text-lg text-white">Pollo Guisado en Salsa</h4>
-              <p className="text-xs text-stone-300 font-light">Receta criolla a fuego lento con cilantro fresco.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Bento Row 4: Lower Asymmetric Block (Buns Conmeap, Saips in Sore, Moabinloes) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Block 1: Garantía & Pasos (Buns Conmeap) */}
-          <div className="menu-paper lg:col-span-4 border border-[#bda078] bg-[#efe0c2] p-6 text-left space-y-4 shadow-[0_8px_18px_rgba(46,27,13,.2)] flex flex-col justify-between">
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#52663d]">COMPROMISO OLLACERCANA</span>
-              <h4 className="font-['Caveat',cursive] font-bold text-2xl text-[#2b2117]">Comida Real y Saludable</h4>
-              <p className="text-xs text-[#5b4a38] leading-relaxed">
-                Cada plato es preparado en cocinas familiares que cumplen con altos estándares de higiene y sazón de hogar.
-              </p>
-            </div>
-            <div className="space-y-2 pt-2 border-t border-dashed border-[#ae9066] text-xs text-[#493323]">
-              <p className="flex items-center gap-2 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-[#62B869]" />
-                <span>100% Ingredientes de la plaza local</span>
-              </p>
-              <p className="flex items-center gap-2 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-[#62B869]" />
-                <span>Sin preservantes ni caldos artificiales</span>
-              </p>
-              <p className="flex items-center gap-2 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-[#62B869]" />
-                <span>Apoyo directo a mujeres de tu vecindario</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Block 2: 4 Micro Badge Grid (Saips in Sore Seyiaing) */}
-          <div className="menu-paper lg:col-span-4 border border-[#bda078] bg-[#efe0c2] p-6 text-left space-y-4 shadow-[0_8px_18px_rgba(46,27,13,.2)] flex flex-col justify-between">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#a84029]">PILARES COMUNITARIOS</span>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-[#f5e9d2] border border-[#c4a77d] space-y-1">
-                <CheckCircle2 className="h-5 w-5 text-[#52663d]" />
-                <p className="text-xs font-bold text-[#2b2117]">Higiene</p>
-                <p className="text-[10px] text-[#80694d]">Revisión constante</p>
-              </div>
-              <div className="p-3 bg-[#f5e9d2] border border-[#c4a77d] space-y-1">
-                <Home className="h-5 w-5 text-[#52663d]" />
-                <p className="text-xs font-bold text-[#2b2117]">Cercanía</p>
-                <p className="text-[10px] text-[#80694d]">En tu mismo barrio</p>
-              </div>
-              <div className="p-3 bg-[#f5e9d2] border border-[#c4a77d] space-y-1">
-                <Heart className="h-5 w-5 text-[#a84029]" />
-                <p className="text-xs font-bold text-[#2b2117]">Amor</p>
-                <p className="text-[10px] text-[#80694d]">Recetas de la abuela</p>
-              </div>
-              <div className="p-3 bg-[#f5e9d2] border border-[#c4a77d] space-y-1">
-                <Bike className="h-5 w-5 text-[#52663d]" />
-                <p className="text-xs font-bold text-[#2b2117]">Ecológico</p>
-                <p className="text-[10px] text-[#80694d]">Entregas a pie</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Block 3: Historias de Hogar (Moabinloes) */}
-          <div className="lg:col-span-4 relative overflow-hidden border-[5px] border-[#d6bd91] shadow-[0_8px_18px_rgba(46,27,13,.25)] group min-h-[220px]">
-            <img src="/images/dona_rosa_mascot.jpg" alt="Doña Rosa Mascot" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2b2117]/90 via-[#2b2117]/40 to-transparent p-6 flex flex-col justify-end text-left space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#dce4ce]">TESTIMONIO DE HOGAR</span>
-              <p className="text-xs font-serif italic text-stone-200">
-                “Cocinar para mis vecinos es compartir el amor de mi familia. Cada plato lleva lo mejor de mí.”
-              </p>
-              <p className="text-xs font-bold text-[#F0822D] pt-1">— Doña Rosa, Cocinera Vecinal</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Banner Callout: Únete como Cocinera */}
-        <div className="menu-paper relative overflow-hidden border border-[#9b774f] bg-[#e8d1a3] p-8 shadow-[0_12px_26px_rgba(46,27,13,.3)] [clip-path:polygon(1%_1%,98%_0%,100%_2%,99%_98%,97%_100%,2%_99%,0%_97%,1%_3%)] flex flex-col sm:flex-row items-center justify-between gap-6 text-left">
-          <div aria-hidden="true" className="absolute -top-1 left-1/2 z-20 h-6 w-24 -translate-x-1/2 -rotate-2 border-x border-[#b99655]/70 bg-[#d6b776]/90 shadow-sm" />
-          <div className="space-y-1">
-            <h3 className="font-['Caveat',cursive] text-2xl font-bold text-[#2b2117]">¿Eres apasionada por la cocina casera?</h3>
-            <p className="text-xs text-[#5b4a38]">
-              Únete a nuestra red de cocineras de barrio y comparte tu sazón con los vecinos de tu conjunto.
-            </p>
-          </div>
-          <Link
-            href="/cuenta"
-            className="px-6 py-3.5 rounded-full bg-[#F0822D] hover:bg-[#d97224] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shrink-0"
-          >
-            Unirme como Cocinera →
+          <Link href="/cuenta/registro" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[#75865a]/70 bg-[#dce4ce] px-5 py-3 text-xs font-bold text-[#42542e] transition hover:bg-[#cdd9b9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#493323]">
+            ¿Cocinas para tu barrio? <ChevronDown className="h-4 w-4 -rotate-90" />
           </Link>
         </div>
       </section>
-
-      {/* ── CHECKOUT ORDER CONFIRMATION MODAL ── */}
-      {orderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white border border-stone-300 rounded-3xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
-            <button
-              onClick={() => setOrderModalOpen(false)}
-              className="absolute top-4 right-4 text-stone-400 hover:text-stone-800 text-lg font-bold"
-            >
-              ✕
-            </button>
-
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-full bg-orange-100 text-[#F0822D] flex items-center justify-center mx-auto">
-                <MapPin className="w-7 h-7" />
-              </div>
-              <h3 className="font-serif text-2xl font-bold text-stone-900">
-                Tu pedido está en la canasta
-              </h3>
-              <p className="text-xs text-stone-500">
-                Esta lista todavía no envía pedidos. Elige una cocinera cercana para revisar su oferta y crear una reserva.
-              </p>
+      {storyboardOpen && (
+        <div role="dialog" aria-modal="true" aria-labelledby="storyboard-dialog-title" className="fixed inset-0 z-[90] flex items-center justify-center bg-[#17110c]/90 p-3 backdrop-blur-sm sm:p-6" onClick={() => setStoryboardOpen(false)}>
+          <div className="relative w-full max-w-6xl rounded-xl border-2 border-[#d6bd91] bg-[#f3e6cc] p-2 shadow-2xl sm:p-3" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 px-2 pb-2">
+              <h2 id="storyboard-dialog-title" className="font-['Caveat',cursive] text-xl font-bold text-[#493323] sm:text-2xl">Olla Verde · una meta compartida</h2>
+              <button type="button" onClick={() => setStoryboardOpen(false)} aria-label="Cerrar lámina" className="rounded-full bg-[#493323] p-2 text-white transition hover:bg-[#6d4931] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#52663d]"><X className="h-5 w-5" /></button>
             </div>
-
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2 text-xs">
-              {cart.map((item) => (
-                <div key={item.id} className="flex justify-between text-stone-700">
-                  <span>
-                    {item.quantity}x {item.name} ({item.cook})
-                  </span>
-                  <span className="font-bold">
-                    ${(item.price * item.quantity).toLocaleString("es-CO")}
-                  </span>
-                </div>
-              ))}
-              <div className="border-t border-stone-200 pt-2 flex justify-between font-extrabold text-[#C84B31] text-sm">
-                <span>Total estimado</span>
-                <span>${total.toLocaleString("es-CO")}</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Link
-                href="/cocineras-cercanas"
-                onClick={() => {
-                  window.localStorage.setItem("ollacercana_menu_cart", JSON.stringify(cart));
-                  setOrderModalOpen(false);
-                }}
-                className="w-full py-3.5 rounded-full bg-[#62B869] hover:bg-[#529d58] text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md"
-              >
-                <MapPin className="w-4 h-4" />
-                <span>Buscar cocinera y reservar</span>
-              </Link>
-
-              <button
-                onClick={() => setOrderModalOpen(false)}
-                className="w-full py-2.5 text-xs text-stone-500 hover:text-stone-800"
-              >
-                Seguir pidiendo
-              </button>
+            <div className="relative h-[min(76vh,850px)] w-full">
+              <Image src="/images/olla_verde_storyboard.jpg" alt="Lámina ilustrada completa de la iniciativa Olla Verde" fill sizes="96vw" className="object-contain" />
             </div>
           </div>
         </div>
       )}
 
-      {/* ── JIRA SPECIFICATION MODALS ── */}
-      <ReservePortionModal
-        isOpen={!!reserveModalDish}
-        onClose={() => setReserveModalDish(null)}
-        dish={reserveModalDish}
-        currentUser={currentUser}
-        onReservationCreated={(resId) => {
-          setStoredDishesList(getStoredDishes());
-          setChatReservationId(resId);
-        }}
-        onRequestPhoneVerification={() => setPhoneVerifyOpen(true)}
-      />
+      {recipeToShow && (() => {
+        const selectedDish = dynamicDishes.find((dish) => dish.name === recipeToShow);
+        const recipe = recipeNotes[recipeToShow] ?? { badge: "Receta del barrio", ingredients: [], steps: [], price: selectedDish?.formattedPrice ?? "", phrase: selectedDish?.cook ?? "", image: selectedDish?.image };
+        return (
+          <div role="dialog" aria-modal="true" aria-labelledby="recipe-dialog-title" className="fixed inset-0 z-[85] flex items-center justify-center bg-[#17110c]/80 p-3 backdrop-blur-sm sm:p-6" onClick={() => setRecipeToShow(null)}>
+            <div className="menu-paper relative max-h-[90vh] w-full max-w-xl overflow-y-auto border-2 border-[#9b774f] bg-[#efe0c2] p-5 text-[#2b2117] shadow-2xl sm:p-7" onClick={(event) => event.stopPropagation()}>
+              <div aria-hidden="true" className="absolute -top-1 left-1/2 h-6 w-20 -translate-x-1/2 -rotate-2 bg-[#d6b776]/90 shadow-sm" />
+              <div className="flex items-start justify-between gap-4 border-b border-dashed border-[#ae9066] pb-3">
+                <div><span className="text-[10px] font-bold uppercase tracking-[.15em] text-[#a84029]">Del recetario vecinal</span><h2 id="recipe-dialog-title" className="font-['Caveat',cursive] text-3xl font-bold">{recipeToShow}</h2><p className="text-xs text-[#6a5037]">Una receta compartida por {selectedDish?.cook || "la comunidad"}</p></div>
+                <button type="button" aria-label="Cerrar receta" onClick={() => setRecipeToShow(null)} className="rounded-full bg-[#493323] p-2 text-white transition hover:bg-[#6d4931]"><X className="h-4 w-4" /></button>
+              </div>
+              <div className="grid gap-4 pt-4 sm:grid-cols-2">
+                <section><h3 className="mb-2 font-['Caveat',cursive] text-xl font-bold underline decoration-dashed">Ingredientes</h3>{recipe.ingredients.length ? <ul className="space-y-1 text-sm">{recipe.ingredients.map((ingredient) => <li key={ingredient}>– {ingredient}</li>)}</ul> : <p className="text-sm">{selectedDish?.description || "Consulta los ingredientes con la cocinera."}</p>}</section>
+                <section><h3 className="mb-2 font-['Caveat',cursive] text-xl font-bold underline decoration-dashed">Preparación</h3>{recipe.steps.length ? <ol className="space-y-2 text-sm">{recipe.steps.map((step, index) => <li key={step}><span className="mr-1 font-bold">{index + 1}.</span>{step}</li>)}</ol> : <p className="text-sm">Esta publicación no incluye la preparación. Puedes preguntarle a {selectedDish?.cook || "la cocinera"} por el chat después de reservar.</p>}</section>
+              </div>
+              <p className="mt-4 border-t border-dashed border-[#ae9066] pt-3 text-xs leading-relaxed text-[#6a5037]">Si tienes alergias o restricciones alimentarias, confirma ingredientes y posibles trazas directamente con quien cocina.</p>
+            </div>
+          </div>
+        );
+      })()}
 
+      {authPromptOpen && (
+        <aside role="dialog" aria-labelledby="auth-prompt-title" aria-describedby="auth-prompt-description" className="fixed bottom-4 left-4 right-4 z-[70] mx-auto w-auto max-w-sm rounded-2xl border-2 border-[#9b774f] bg-[#fff5df] p-4 text-[#493323] shadow-[0_12px_36px_rgba(35,22,12,.4)] sm:left-auto sm:right-6 sm:bottom-6">
+          <button type="button" onClick={() => setAuthPromptOpen(false)} aria-label="Cerrar aviso" className="absolute right-3 top-3 rounded-full p-1 text-[#80694d] transition hover:bg-[#ead9ba] hover:text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+            <X className="h-4 w-4" />
+          </button>
+          <div className="pr-7">
+            <h2 id="auth-prompt-title" className="font-['Caveat',cursive] text-2xl font-bold leading-tight">Un momentico…</h2>
+            <p id="auth-prompt-description" className="mt-1 text-sm leading-snug text-[#5b4a38]">Para añadir platos, reservar o continuar con tu pedido, primero inicia sesión o crea tu cuenta.</p>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex flex-1 gap-2">
+              <Link href="/cuenta" className="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#C84B31] px-3 py-2 text-center text-xs font-bold text-white shadow-sm transition hover:bg-[#a83e29] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#493323]">Iniciar sesión</Link>
+              <Link href="/cuenta/registro" className="inline-flex min-h-10 flex-1 items-center justify-center rounded-full border border-[#80694d] bg-[#f2e5cc] px-3 py-2 text-center text-xs font-bold text-[#493323] transition hover:bg-white">Crear cuenta</Link>
+            </div>
+            <button type="button" onClick={() => setAuthPromptOpen(false)} className="min-h-10 rounded-full px-3 py-2 text-sm font-semibold text-[#6d5941] transition hover:bg-[#ead9ba] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">Ahora no</button>
+          </div>
+        </aside>
+      )}
+
+      {/* ── JIRA SPECIFICATION MODALS ── */}
       <ReputationModal
         isOpen={!!reputationCook}
         onClose={() => setReputationCook(null)}
@@ -1458,22 +1544,14 @@ export default function MenuPage() {
         onOpenRatingModal={(resId, cId) => setRatingTarget({ reservationId: resId, cookId: cId })}
       />
 
-      <PhoneVerificationModal
-        isOpen={phoneVerifyOpen}
-        onClose={() => setPhoneVerifyOpen(false)}
-        phone={currentUser.phone}
-        onVerified={() => {
-          currentUser.phoneVerified = true;
-        }}
-      />
-
-      <RatingModal
+      {ratingTarget && <RatingModal
+        key={ratingTarget.reservationId}
         isOpen={!!ratingTarget}
         onClose={() => setRatingTarget(null)}
         reservationId={ratingTarget?.reservationId || ""}
         cookId={ratingTarget?.cookId || ""}
         currentUser={currentUser}
-      />
+      />}
     </div>
   );
 }

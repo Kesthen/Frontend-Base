@@ -30,7 +30,7 @@ const helpSections = [
 
 export default function HelpPage() {
   return (
-    <main className="min-h-screen bg-[#f3ecdf] px-4 py-10 text-[#30251c] sm:px-6">
+    <main data-theme-page className="min-h-screen bg-[#f3ecdf] px-4 py-10 text-[#30251c] sm:px-6">
       <div className="mx-auto max-w-3xl">
         <Link
           href="/"
@@ -72,8 +72,9 @@ export default function HelpPage() {
             href="/cuenta"
             className="rounded-full bg-[#b45b25] px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#98471c]"
           >
-            Ir a mi cuenta
+            Iniciar sesión
           </Link>
+          <Link href="/cuenta/registro" className="rounded-full border border-[#cbb59a] bg-[#fffaf1] px-5 py-3 text-sm font-bold text-[#684329] transition hover:border-[#b45b25]">Crear cuenta</Link>
           <Link
             href="/menu"
             className="rounded-full border border-[#cbb59a] bg-[#fffaf1] px-5 py-3 text-sm font-bold text-[#684329] transition hover:border-[#b45b25]"
