@@ -40,6 +40,109 @@ El alcance parte de las historias de usuario HU-01 a HU-24 definidas en Jira (é
 
 ---
 
+## Recorrido pantalla a pantalla
+
+Así se ve OllaCercana, siguiendo el camino de una persona desde que entra al sitio hasta que reserva su plato.
+
+### 1. Portada
+
+<img width="1911" height="951" alt="01-portada" src="https://github.com/user-attachments/assets/38cb379f-8546-481f-87bb-691e8b5c1265" />
+
+
+Pantalla de bienvenida con la fachada de una casa de barrio, el logo de la marca y el lema *"Comida casera a un paso de tu puerta"*. La indicación **"Desliza para entrar a la cocina"** invita a hacer scroll, y al hacerlo la escena avanza por una secuencia de fotogramas hasta entrar a la casa. En todas las pantallas está disponible el botón flotante **"¿Te ayudo?"**, que abre a la Abuelita, la asistente de ayuda.
+
+### 2. La cocina interactiva
+
+<img width="1916" height="955" alt="02-cocina-interactiva" src="https://github.com/user-attachments/assets/08e0f861-1a53-4597-877a-c341810607d4" />
+
+
+Al entrar a la cocina aparecen tres accesos sobre la escena, cada uno con su etiqueta:
+
+- **Cocineras** (*"Sabor de barrio"*): conoce a las cocineras de la comunidad.
+- **Mapa** (*"Comida cerca de ti"*): encuentra quién cocina a tu alrededor.
+- **Recetas** (*"Pide tu plato hoy"*): abre el menú con los platos disponibles.
+
+### 3. Descubre la comida casera
+
+<img width="1916" height="961" alt="03-descubre-comida-casera" src="https://github.com/user-attachments/assets/fdfa0c2d-c5fd-4b30-bafa-5dda95a28794" />
+
+
+Sección informativa con estética de papel y notas pegadas. Resume la propuesta de valor y explica en cuatro pasos cómo funciona la plataforma: explorar el menú, reservar y comunicarse con la cocinera, disfrutar y vivir el sabor casero y la comunidad. Incluye el acceso **"¿Cómo hago un pedido?"** y un **reporte de comunidad** con publicaciones como *Destino: Comunidad* y *20 Reglas de Seguridad e Higiene*.
+
+### 4. Mapa de cocineras cercanas
+
+<img width="1912" height="960" alt="04-mapa-cocineras-cercanas" src="https://github.com/user-attachments/assets/54a73515-515b-48c5-aa5a-2e9b9f339463" />
+
+
+Vista de las cocinas activas alrededor del usuario sobre un **plano ilustrado** de la zona de muestra (Chapinero Alto, Bogotá).
+
+- **Barra superior:** zona actual, buscador de plato, cocinera o sazón, acceso al Libretón (menú) y a "Mi cuenta".
+- **Filtros por distancia:** Todas, 500 m, 1 km, 1.5 km, 2 km y *Abiertas ahora*, cada uno con su contador.
+- **Mapa:** pines por cocinera con su distancia, anillos de radio y el punto "Tu ubicación". Los pines indican si la cocina está cocinando ahora o cerrada.
+- **Fogones activos en tu radio:** listado de las cocineras disponibles, con acceso a **"Explorar el Libretón completo"**.
+
+Las distancias del plano son ilustrativas. La dirección exacta de la cocinera solo se comparte al confirmar una reserva.
+
+### 5. Menú de platos (Libretón)
+
+Es la pantalla principal del comprador (`/menu`). Con la sesión iniciada, la barra superior muestra la zona (Bogotá, zona de muestra), el buscador de platos, los accesos a **Explorar**, **Cocinas cercanas** y **Mis pedidos**, los ajustes, el carrito y el menú del usuario.
+
+#### 5.1 Inicio del menú
+
+<img width="1600" height="929" alt="05a-menu-inicio" src="https://github.com/user-attachments/assets/d7490957-1a95-4b69-ac4a-bd5857b86533" />
+
+
+Abre con el mensaje *"Hoy se come rico"* y la sección **Antojo del Día**: tarjetas con los platos de cocinas cercanas disponibles en el momento, cada una con la cocinera, su calificación, la distancia y el botón **Agregar al pedido**. A un lado, el bloque **Ubica tu antojo** presenta a la Abuela OllaCercana. En la parte inferior hay filtros rápidos por categoría: Todos, Almuerzos, Sopas, Vegetariano, Postres y un panel de **Filtros** adicionales.
+
+#### 5.2 Recetario
+
+<img width="1600" height="818" alt="05b-menu-recetario" src="https://github.com/user-attachments/assets/a4faa39e-6f55-4d71-969e-ad10bf3bcabc" />
+
+
+Cuadrícula de platos publicados por las cocineras del barrio. Cada tarjeta muestra:
+
+- Nombre del plato, descripción corta, foto (o *"Foto pendiente"* si la cocinera aún no la sube) y la cocinera responsable.
+- Sello **"Cocina limpia & manipulación verificada"**.
+- **Distancia aproximada** y **conjunto residencial** de la cocinera.
+- **Precio por porción** y los botones **Añadir** (al carrito) y **Reservar** (reserva directa).
+- Enlace **"Ver en el recetario"** para consultar el detalle del plato.
+
+En el costado derecho se encuentra el carrito **"Tu pedido"**, con el botón **¡A comer!** para continuar cuando ya hay platos agregados.
+
+#### 5.3 Sello Olla Verde
+
+<img width="1600" height="840" alt="05c-menu-sello-olla-verde" src="https://github.com/user-attachments/assets/f9d6aa32-1dc4-4dcf-ad65-a48c74736e69" />
+
+
+Bloque destacado *"El sabor de casa, más cerca"* con el acceso **Ver platos del día**. Presenta el sello **Olla Verde**, un distintivo del conjunto con vigencia de 7 días que se obtiene cuando el conjunto vende todas las porciones publicadas durante la semana.
+
+#### 5.4 Una meta que se cocina entre todos
+
+<img width="1600" height="827" alt="05d-menu-meta-compartida" src="https://github.com/user-attachments/assets/ee2def97-610a-4f67-985b-97f56deadb14" />
+
+
+Sección que explica la idea detrás del sello como una meta compartida de la comunidad: el reconocimiento de cocina sostenible se otorga a las cocineras que venden todas sus porciones durante siete días seguidos. Incluye la llamada **"Quiero ofrecer mis platillos"** dirigida a quienes quieran empezar a cocinar para sus vecinos.
+
+#### 5.5 De la olla a tu mesa
+
+<img width="1600" height="452" alt="05e-menu-como-funciona" src="https://github.com/user-attachments/assets/e3bb7e81-791b-4f64-aa34-136c8f9f6514" />
+
+
+Cierre del menú con el resumen del proceso en tres pasos: **1. Explora el libretón**, **2. Reserva tu porción** y **3. Disfruta y comparte**, acordando la entrega directamente con la vecina. Debajo aparece la insignia **Vecino Fiel**, que se gana al completar tres entregas en un mes con la misma cocinera, junto con el acceso **"¿Cocinas para tu barrio?"** para registrarse como cocinera.
+
+### 6. Acceso a la cuenta
+
+<img width="1914" height="951" alt="06-acceso" src="https://github.com/user-attachments/assets/13517fa3-6156-487b-ae23-765f2f3497b9" />
+
+
+Pantalla **"Entra a tu cocina"**, con la Abuelita de fondo y un formulario de acceso:
+
+- Identificador (correo o celular) y contraseña.
+- **Perfil de ingreso:** Comprador, Cocinera o Admin. Cada rol es redirigido a su propio panel.
+- Opción *Recordarme*, enlace de recuperación de contraseña y acceso al registro para quienes aún no tienen cuenta.
+
+---
+
 ## Stack tecnológico
 
 | Capa | Tecnología |
@@ -156,6 +259,8 @@ Un plato, por su parte, puede estar `DISPONIBLE`, `AGOTADO`, `EXPIRADO` o `INHAB
 │   ├── frames/ · frames-login/ # Secuencias de fotogramas para fondos en scroll
 │   ├── ManualDeIdentidad.html  # Manual de identidad visual
 │   └── Jira.csv                # Exportación del backlog (HU-01 a HU-24)
+├── docs/
+│   └── screenshots/            # Capturas usadas en este README
 ├── backups/                    # Copias de seguridad de pantallas anteriores
 └── scratch/                    # Material de trabajo (manual, parseo del backlog)
 ```
@@ -193,15 +298,20 @@ El manual de marca está en [`public/ManualDeIdentidad.html`](public/ManualDeIde
 - **Carpetas de apoyo:** `backups/` y `scratch/` no hacen parte de la aplicación; pueden excluirse del repositorio si ya no se necesitan.
 - **Nombre del paquete:** en `package.json` el nombre sigue siendo `paguina`; conviene renombrarlo a `ollacercana`.
 - **Next.js 16:** esta versión tiene cambios respecto a versiones anteriores. Revisa la documentación incluida en `node_modules/next/dist/docs/` antes de modificar convenciones del framework (ver `AGENTS.md`).
+- **Siguiente paso natural:** reemplazar `localStorage` por un backend con API y autenticación real, y habilitar la recuperación de contraseña por correo (hoy no está disponible).
 
 ---
 
 ## Equipo
 
-- KEVIN ANDREY ANGEL ACEVEDO
-- JULIAN FELIPE MORALES ZAMBRANO
-- DANIEL CAMILO MOSQUERA MARTINEZ
-- SANTIAGO ANDRES GARCIA ALMARIO
-- JUAN MANUEL GARZON VIRACACHA
+Daniel Camilo Mosquera Martínez
+Juan Manuel Garzón Viracacha
+Kevin Andrey Ángel Acevedo
+Julián Felipe Morales Zambrano
+Santiago Andrés García Almario
 
 ---
+
+## Licencia
+
+Proyecto académico. Define aquí la licencia si lo vas a publicar.
