@@ -427,7 +427,7 @@ export default function CocinerasCercanasPage() {
       {/* ── 4. MAIN INTERACTIVE MAP & DETAILS SECTION ── */}
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 w-full flex-1 flex flex-col gap-8 relative z-10">
         {/* MAP CONTAINER (Framed Illustrated Canvas against Sunlit Kitchen Background) */}
-        <section className="relative w-full rounded-3xl overflow-hidden bg-[#FAF6F0] border-4 border-[#4A3728] shadow-2xl">
+        <section className="relative -mx-4 w-[calc(100%+2rem)] overflow-hidden rounded-none border-y-4 border-[#4A3728] bg-[#FAF6F0] shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl sm:border-4">
           {/* Paper Texture Overlay */}
           <div
             className="absolute inset-0 pointer-events-none opacity-40 mix-blend-multiply"
@@ -461,7 +461,7 @@ export default function CocinerasCercanasPage() {
           </div>
 
           {/* ILLUSTRATED SVG MAP VIEW */}
-          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] md:aspect-[21/10] max-h-[580px] overflow-hidden select-none" aria-label="Mapa ilustrado de cocinas cercanas; toca un pin para ver su plato">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] md:aspect-[21/10] max-h-[580px] overflow-hidden select-none" style={{ touchAction: "pan-y" }} aria-label="Mapa ilustrado de cocinas cercanas; toca un pin para ver su plato. Desliza con un dedo para seguir recorriendo la página.">
             <svg
               data-map-illustration
               viewBox="0 0 1000 650"

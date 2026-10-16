@@ -17,6 +17,9 @@ import {
   RefreshCw,
   HelpCircle,
   Home,
+  Heart,
+  Award,
+  ArrowRight,
 } from "lucide-react";
 
 interface UserProfile {
@@ -29,6 +32,7 @@ interface UserProfile {
   bio?: string;
   residentialComplex?: string;
   paymentMethods: string[];
+  badges?: string[];
   isLoggedIn: boolean;
   avatar?: string;
   kitchenPhoto?: string;
@@ -174,6 +178,40 @@ export default function PerfilPage() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col items-center justify-center">
         <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border-2 border-[#8B5E34]/50 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/60 space-y-8 my-6">
           <AccountNav user={user} current="perfil" />
+
+          {/* Banner de Insignia Oficial: Vecino Fiel (HU-21) */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#291b12] via-[#20150d] to-[#291b12] border border-[#a86538]/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-3.5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-500/60 bg-amber-950/60 text-amber-300 shadow-inner">
+                <Heart className="h-6 w-6 text-[#c05621] fill-[#c05621]/40" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Insignia Oficial · HU-21</span>
+                  {user.badges?.includes("Vecino Fiel") && (
+                    <span className="bg-emerald-950 text-emerald-300 border border-emerald-500/50 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
+                      🌟 Activo en Perfil
+                    </span>
+                  )}
+                </div>
+                <h4 className="font-['Caveat',cursive] text-2xl font-bold text-amber-100 leading-tight">
+                  Pasaporte de Vecino Fiel
+                </h4>
+                <p className="text-xs text-stone-300">
+                  {user.badges?.includes("Vecino Fiel")
+                    ? "¡Tu perfil luce la insignia oficial por tu racha activa de consumo local!"
+                    : "Completa 3 pedidos este mes con una misma cocinera para ganar la insignia oficial."}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/vecino-fiel"
+              className="shrink-0 bg-[#c05621] hover:bg-[#d9672e] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
+            >
+              <span>Ver mi Expediente</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
           <form onSubmit={handleProfileSave} className="space-y-4 text-left border-t border-white/10 pt-6">
             <div className="flex flex-wrap items-center justify-between gap-2">

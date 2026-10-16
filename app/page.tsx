@@ -5,6 +5,7 @@ import HeroSection from "@/components/HeroSection";
 import ScrollCanvasBackground from "@/components/ScrollCanvasBackground";
 import Link from "next/link";
 import { ChefHat, HeartHandshake, House, MapPin, MessageCircle, UtensilsCrossed } from "lucide-react";
+
 import EndingSection from "@/components/EndingSection";
 
 export default function Home() {
@@ -118,6 +119,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
       <EndingSection />
     </main>
   );

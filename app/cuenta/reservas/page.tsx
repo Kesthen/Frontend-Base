@@ -8,7 +8,7 @@ import AccountNav from "@/components/AccountNav";
 import OllaVerdeStamp from "@/components/OllaVerdeStamp";
 import ChatModal from "@/components/modals/ChatModal";
 import OllaChatMark from "@/components/OllaChatMark";
-import { getStoredDishes, getStoredReservations, getStoredNotifications, getStoredReviews, saveReviews, saveReservations, sharesResidentialComplex, syncOllaVerdeProgressAfterCompletion, Review } from "@/lib/ollacercana-store";
+import { getStoredDishes, getStoredReservations, getStoredNotifications, getStoredReviews, saveReviews, saveReservations, sharesResidentialComplex, syncOllaVerdeProgressAfterCompletion, syncVecinoFielAfterCompletion, hasPendingChatMessage, Review } from "@/lib/ollacercana-store";
 import {
   Clock,
   CheckCircle2,
@@ -329,7 +329,10 @@ export default function ReservasPage() {
     } : reservation);
     saveReservations(savedReservations);
     const completedReservation = savedReservations.find((reservation) => reservation.id === resId);
-    if (completedReservation) syncOllaVerdeProgressAfterCompletion(completedReservation);
+    if (completedReservation) {
+      syncOllaVerdeProgressAfterCompletion(completedReservation);
+      syncVecinoFielAfterCompletion(completedReservation);
+    }
     setRatingStars(0);
     setRatingComment("");
     setRatingError("");
@@ -642,8 +645,14 @@ export default function ReservasPage() {
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-dashed border-[#d7c09c]">
                         <button
                           onClick={() => setActiveChatReservationId(res.id)}
-                          className="px-4 py-2 rounded-xl border border-[#6a391f] bg-[#a8432a] text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#8e3522]"
+                          className="relative px-4 py-2 rounded-xl border border-[#6a391f] bg-[#a8432a] text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#8e3522]"
                         >
+                          {user && hasPendingChatMessage(res.id, user) && (
+                            <span
+                              aria-label="Mensaje pendiente"
+                              className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[#f7eddb] bg-[#e8542f]"
+                            />
+                          )}
                           <OllaChatMark className="h-6 w-7" />
                           <span>{res.status === "closed" || res.status === "rejected" ? "Ver conversación" : "Chat con cocinera"}</span>
                         </button>

@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Award, CalendarDays } from "lucide-react";
 import { getActiveOllaVerdeAwards, OllaVerdeAward, sharesResidentialComplex } from "@/lib/ollacercana-store";
 
 interface OllaVerdeStampProps {
   residentialComplex?: string;
   compact?: boolean;
+  className?: string;
 }
 
-export default function OllaVerdeStamp({ residentialComplex, compact = false }: OllaVerdeStampProps) {
+export default function OllaVerdeStamp({ residentialComplex, compact = false, className = "" }: OllaVerdeStampProps) {
   const [awards, setAwards] = useState<OllaVerdeAward[]>([]);
 
   useEffect(() => {
@@ -31,18 +31,16 @@ export default function OllaVerdeStamp({ residentialComplex, compact = false }: 
     <span
       title={`Sello oficial Olla Verde · 7 PT. ${award.residentialComplex} completó la meta de vender todas sus porciones durante 7 días consecutivos. Vigente hasta el ${expiry}.${award.isDemo ? " Ejemplo de demostración." : ""}`}
       aria-label={`Sello Olla Verde de 7 PT para ${award.residentialComplex}${award.isDemo ? ", ejemplo de demostración" : ""}`}
-      className={`inline-flex w-fit items-center gap-1.5 rounded-full border border-[#76834d] bg-[#f5f0d9] text-[#394528] shadow-sm ${compact ? "px-1.5 py-1" : "px-2 py-1"}`}
+      className={`inline-block select-none transition-transform duration-200 hover:scale-105 ${className}`}
     >
-      <span aria-hidden="true" className={`relative shrink-0 overflow-hidden rounded-full border border-[#b38a54] bg-[#fff9e8] ${compact ? "h-8 w-8" : "h-10 w-10"}`}>
-        <img src="/images/sello_olla_verde.png" alt="" className="absolute inset-0 h-full w-full scale-[1.8] -translate-x-[22%] translate-y-[19%] object-contain" />
-      </span>
-      {!compact && (
-        <span className="flex flex-col text-left leading-tight">
-          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wide"><Award className="h-3 w-3 text-[#52663d]" /> Olla Verde · 7 PT</span>
-          <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#6c6748]"><CalendarDays className="h-2.5 w-2.5" /> Vigente hasta {expiry}</span>
-          {award.isDemo && <span className="text-[8px] font-bold uppercase tracking-wide text-[#8c5b34]">Ejemplo de meta cumplida</span>}
-        </span>
-      )}
+      <img
+        src="/images/sello_olla_verde.png"
+        alt={`Sello Olla Verde · 7 PT (${award.residentialComplex})`}
+        className={`object-contain drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)] ${
+          compact ? "h-9 w-auto" : "h-16 w-auto"
+        }`}
+        loading="lazy"
+      />
     </span>
   );
 }

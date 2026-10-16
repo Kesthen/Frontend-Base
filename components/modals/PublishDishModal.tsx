@@ -38,6 +38,7 @@ export default function PublishDishModal({
   const [residentialComplex, setResidentialComplex] = useState(currentUser.residentialComplex || "Conjunto San Luis");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [imageError, setImageError] = useState("");
 
   if (!isOpen) return null;
 
@@ -297,23 +298,42 @@ export default function PublishDishModal({
                 <span>Subir imagen desde mi dispositivo</span>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (evt) => {
-                        if (evt.target?.result) {
-                          setSelectedImage(evt.target.result as string);
-                        }
-                      };
-                      reader.readAsDataURL(file);
+                    if (!file) return;
+
+                    const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+                    const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+
+                    if (!ALLOWED_TYPES.includes(file.type)) {
+                      setImageError("Solo se permiten imágenes en formato JPG o PNG.");
+                      e.target.value = "";
+                      return;
                     }
+                    if (file.size > MAX_SIZE_BYTES) {
+                      setImageError("La imagen no puede superar los 5MB.");
+                      e.target.value = "";
+                      return;
+                    }
+
+                    setImageError("");
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                      if (evt.target?.result) {
+                        setSelectedImage(evt.target.result as string);
+                      }
+                    };
+                    reader.readAsDataURL(file);
                   }}
                   className="hidden"
                 />
               </label>
             </div>
+
+            {imageError && (
+              <p className="text-[11px] text-red-400 mb-2 -mt-1 font-semibold">{imageError}</p>
+            )}
 
             <p className="text-[11px] text-amber-400/60 mb-2 font-mono">O selecciona una plantilla de imagen previa:</p>
 
