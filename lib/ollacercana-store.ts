@@ -47,13 +47,153 @@ export interface DishItem {
   createdAt: string;
 }
 
+export const normalizeResidentialComplex = (value?: string): string => {
+  if (!value?.trim()) return "";
+  return value
+    .toLocaleLowerCase("es")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(apartamento|apto\.?|interior|torre|bloque|casa)\s*[#\w-]*\s*$/i, "")
+    .replace(/^\s*(conjunto\s+residencial|conjunto|residencial|residencias|unidad\s+residencial)\s+/i, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+};
+
+export const sharesResidentialComplex = (first?: string, second?: string): boolean => {
+  const normalizedFirst = normalizeResidentialComplex(first);
+  const normalizedSecond = normalizeResidentialComplex(second);
+  return Boolean(normalizedFirst && normalizedSecond && normalizedFirst === normalizedSecond);
+};
+
+export interface OllaVerdeDailyProgress {
+  residentialComplex: string;
+  date: string; // YYYY-MM-DD in local time
+  portionsPublished: number;
+  portionsSold: number;
+  isDemo?: boolean;
+}
+
+export interface OllaVerdeAward {
+  residentialComplex: string;
+  normalizedComplex: string;
+  validUntil: string;
+  isDemo: boolean;
+}
+
+const OLLA_VERDE_PROGRESS_KEY = "ollacercana_olla_verde_progress_v1";
+
+const localDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDemoOllaVerdeProgress = (): OllaVerdeDailyProgress[] => {
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7 + index);
+    return {
+      residentialComplex: "Conjunto El Rosal",
+      date: localDateKey(date),
+      portionsPublished: 12,
+      portionsSold: 12,
+      isDemo: true,
+    };
+  });
+};
+
+export const getStoredOllaVerdeProgress = (): OllaVerdeDailyProgress[] => {
+  if (typeof window === "undefined") return getDemoOllaVerdeProgress();
+  const stored = localStorage.getItem(OLLA_VERDE_PROGRESS_KEY);
+  if (!stored) {
+    const demoProgress = getDemoOllaVerdeProgress();
+    localStorage.setItem(OLLA_VERDE_PROGRESS_KEY, JSON.stringify(demoProgress));
+    return demoProgress;
+  }
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : getDemoOllaVerdeProgress();
+  } catch {
+    return getDemoOllaVerdeProgress();
+  }
+};
+
+/** Earn the 7 PT stamp after selling every listed portion for 7 consecutive days. */
+export const getActiveOllaVerdeAwards = (now = new Date()): OllaVerdeAward[] => {
+  const progress = getStoredOllaVerdeProgress();
+  const byComplex = new Map<string, OllaVerdeDailyProgress[]>();
+
+  for (const day of progress) {
+    const normalizedComplex = normalizeResidentialComplex(day.residentialComplex);
+    if (!normalizedComplex || !/^\d{4}-\d{2}-\d{2}$/.test(day.date)) continue;
+    const entries = byComplex.get(normalizedComplex) ?? [];
+    entries.push(day);
+    byComplex.set(normalizedComplex, entries);
+  }
+
+  const awards: OllaVerdeAward[] = [];
+  for (const [normalizedComplex, entries] of byComplex) {
+    const byDate = new Map<string, OllaVerdeDailyProgress>();
+    for (const entry of entries) byDate.set(entry.date, entry);
+    const successful = (day?: OllaVerdeDailyProgress) => Boolean(day && day.portionsPublished > 0 && day.portionsSold >= day.portionsPublished);
+    const candidates = [...byDate.values()].filter(successful).sort((a, b) => b.date.localeCompare(a.date));
+    for (const lastDay of candidates) {
+      const achievementDate = new Date(`${lastDay.date}T12:00:00`);
+      if (achievementDate > now) continue;
+      const qualifyingWeek: OllaVerdeDailyProgress[] = [];
+      let isFullWeek = true;
+      for (let offset = 0; offset < 7; offset += 1) {
+        const day = new Date(achievementDate);
+        day.setDate(day.getDate() - offset);
+        const progressForDay = byDate.get(localDateKey(day));
+        if (!successful(progressForDay)) {
+          isFullWeek = false;
+          break;
+        }
+        qualifyingWeek.push(progressForDay!);
+      }
+      if (!isFullWeek) continue;
+
+      // The seal remains valid for seven days after it is earned, even if a later day misses the goal.
+      const validUntil = new Date(`${lastDay.date}T23:59:59`);
+      validUntil.setDate(validUntil.getDate() + 7);
+      if (now >= validUntil) continue;
+      awards.push({
+        residentialComplex: lastDay.residentialComplex,
+        normalizedComplex,
+        validUntil: validUntil.toISOString(),
+        isDemo: qualifyingWeek.every((day) => day.isDemo === true),
+      });
+      break;
+    }
+  }
+  return awards;
+};
+
+export const recordOllaVerdeDailyProgress = (entry: OllaVerdeDailyProgress): void => {
+  if (typeof window === "undefined") return;
+  const normalizedComplex = normalizeResidentialComplex(entry.residentialComplex);
+  if (!normalizedComplex || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) return;
+  const progress = getStoredOllaVerdeProgress().filter((day) =>
+    normalizeResidentialComplex(day.residentialComplex) !== normalizedComplex || day.date !== entry.date,
+  );
+  progress.push({ ...entry, isDemo: false });
+  localStorage.setItem(OLLA_VERDE_PROGRESS_KEY, JSON.stringify(progress));
+  window.dispatchEvent(new Event("ollaverde-progress-updated"));
+};
+
 export interface Reservation {
   id: string;
   dishId: string;
   dishName: string;
   dishImage: string;
   cookId: string;
+  cookAvatar?: string;
   cookName: string;
+  cookResidentialComplex?: string;
+  buyerResidentialComplex?: string;
+  isSameResidentialComplex?: boolean;
   buyerName: string;
   buyerEmail: string;
   portions: number;
@@ -68,6 +208,7 @@ export interface Reservation {
   cookConfirmedDelivery?: boolean;
   cookConfirmedPayment?: boolean;
   hasOpenReport?: boolean;
+  completedAt?: string;
   createdAt: string; // ISO string
   expiresAt: string; // ISO string (10 min after creation)
 }
@@ -325,6 +466,27 @@ export const getStoredReservations = (): Reservation[] => {
 export const saveReservations = (reservations: Reservation[]) => {
   if (typeof window === "undefined") return;
   localStorage.setItem("ollacercana_reservations_v2", JSON.stringify(reservations));
+};
+
+/** Recalculates a complex's daily Olla Verde progress after a completed sale. */
+export const syncOllaVerdeProgressAfterCompletion = (reservation: Reservation): void => {
+  if (typeof window === "undefined" || reservation.status !== "COMPLETADA") return;
+  const complex = reservation.cookResidentialComplex;
+  if (!complex) return;
+  const completedAt = reservation.completedAt || reservation.createdAt;
+  const date = localDateKey(new Date(completedAt));
+  const publishedDishes = getStoredDishes().filter((dish) =>
+    sharesResidentialComplex(dish.residentialComplex, complex) && localDateKey(new Date(dish.createdAt)) === date,
+  );
+  const portionsPublished = publishedDishes.reduce((total, dish) => total + dish.totalPortions, 0);
+  if (portionsPublished <= 0) return;
+
+  const portionsSold = getStoredReservations()
+    .filter((item) => item.status === "COMPLETADA" && sharesResidentialComplex(item.cookResidentialComplex, complex))
+    .filter((item) => localDateKey(new Date(item.completedAt || item.createdAt)) === date)
+    .reduce((total, item) => total + item.portions, 0);
+
+  recordOllaVerdeDailyProgress({ residentialComplex: complex, date, portionsPublished, portionsSold });
 };
 
 export const getStoredReviews = (): Review[] => {

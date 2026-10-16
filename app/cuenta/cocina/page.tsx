@@ -9,6 +9,8 @@ import AccountNav from "@/components/AccountNav";
 import PublishDishModal from "@/components/modals/PublishDishModal";
 import PhoneVerificationModal from "@/components/modals/PhoneVerificationModal";
 import SalesHistoryModal from "@/components/modals/SalesHistoryModal";
+import ChatModal from "@/components/modals/ChatModal";
+import OllaChatMark from "@/components/OllaChatMark";
 import {
   getStoredReservations,
   getStoredNotifications,
@@ -16,6 +18,8 @@ import {
   getStoredDishes,
   saveDishes,
   saveReservations,
+  sharesResidentialComplex,
+  syncOllaVerdeProgressAfterCompletion,
   DishItem,
 } from "@/lib/ollacercana-store";
 import {
@@ -72,6 +76,9 @@ interface Reservation {
   isAutoClosed?: boolean;
   rated?: boolean;
   cookName?: string;
+  cookResidentialComplex?: string;
+  buyerResidentialComplex?: string;
+  isSameResidentialComplex?: boolean;
   pickupTime?: string;
   paymentReceipt?: string;
   paymentReceiptName?: string;
@@ -117,6 +124,7 @@ export default function CocinaPage() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [activeChatReservationId, setActiveChatReservationId] = useState<string | null>(null);
   const [dishesList, setDishesList] = useState<DishItem[]>([]);
   const [dishAvailabilityError, setDishAvailabilityError] = useState<string | null>(null);
 
@@ -179,6 +187,9 @@ export default function CocinaPage() {
             buyerName: sr.buyerName,
             buyerPhone: "3001234567",
             paymentMethod: sr.preferredPaymentMethod,
+            cookResidentialComplex: sr.cookResidentialComplex || parsed.residentialComplex,
+            buyerResidentialComplex: sr.buyerResidentialComplex,
+            isSameResidentialComplex: sr.isSameResidentialComplex ?? sharesResidentialComplex(parsed.residentialComplex, sr.buyerResidentialComplex),
             paymentReceipt: sr.paymentReceipt,
             paymentReceiptName: sr.paymentReceiptName,
             price: `$${sr.totalPrice.toLocaleString("es-CO")}`,
@@ -329,12 +340,21 @@ export default function CocinaPage() {
     });
     setReservations(updated);
     localStorage.setItem("ollacercana_reservations", JSON.stringify(updated));
-    saveReservations(getStoredReservations().map((reservation) => reservation.id === resId ? {
-      ...reservation,
-      status: updated.find((item) => item.id === resId)?.compradorClosedAt ? "COMPLETADA" : "CONFIRMADO",
-      cookConfirmedDelivery: true,
-      cookConfirmedPayment: true,
-    } : reservation));
+    const completedAt = new Date().toISOString();
+    const savedReservations = getStoredReservations().map((reservation) => {
+      if (reservation.id !== resId) return reservation;
+      const isCompleted = Boolean(updated.find((item) => item.id === resId)?.compradorClosedAt);
+      return {
+        ...reservation,
+        status: isCompleted ? "COMPLETADA" as const : "CONFIRMADO" as const,
+        completedAt: isCompleted ? completedAt : reservation.completedAt,
+        cookConfirmedDelivery: true,
+        cookConfirmedPayment: true,
+      };
+    });
+    saveReservations(savedReservations);
+    const completedReservation = savedReservations.find((reservation) => reservation.id === resId && reservation.status === "COMPLETADA");
+    if (completedReservation) syncOllaVerdeProgressAfterCompletion(completedReservation);
   };
 
   const handleSimulateCompradorConfirm = (resId: string) => {
@@ -352,6 +372,13 @@ export default function CocinaPage() {
     });
     setReservations(updated);
     localStorage.setItem("ollacercana_reservations", JSON.stringify(updated));
+    const completedAt = new Date().toISOString();
+    const savedReservations = getStoredReservations().map((reservation) => reservation.id === resId && updated.find((item) => item.id === resId)?.cocineraClosedAt
+      ? { ...reservation, status: "COMPLETADA" as const, completedAt, buyerConfirmedDelivery: true }
+      : reservation);
+    saveReservations(savedReservations);
+    const completedReservation = savedReservations.find((reservation) => reservation.id === resId && reservation.status === "COMPLETADA");
+    if (completedReservation) syncOllaVerdeProgressAfterCompletion(completedReservation);
   };
 
   if (checkingSession || !user) {
@@ -619,6 +646,7 @@ export default function CocinaPage() {
                     <div>
                       <span className="text-stone-500 block text-[10px] uppercase">Comprador</span>
                       <span className="font-semibold text-white">{res.buyerName}</span>
+                      {res.isSameResidentialComplex && <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 text-[9px] font-bold text-emerald-200"><Home className="h-3 w-3" /> Del mismo conjunto</span>}
                     </div>
                     <div>
                       <span className="text-stone-500 block text-[10px] uppercase">Cantidad</span>
@@ -639,6 +667,15 @@ export default function CocinaPage() {
                       <CheckCircle2 className="h-4 w-4" /> Revisar comprobante: {res.paymentReceiptName || "ver archivo"}
                     </a>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveChatReservationId(res.id)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-[#75865a]/70 bg-[#dce4ce] px-4 py-2.5 text-xs font-bold text-[#42542e] transition hover:bg-[#cdd9b9]"
+                  >
+                    <OllaChatMark className="h-6 w-7" />
+                    {res.status === "closed" || res.status === "rejected" ? "Ver conversación" : "Chat con comprador"}
+                  </button>
 
                   {res.status === "pending" && (
                     <div className="flex items-center gap-3 pt-2">
@@ -830,6 +867,19 @@ export default function CocinaPage() {
           setUser(updated);
           localStorage.setItem("ollacercana_user", JSON.stringify(updated));
         }}
+      />
+
+      <ChatModal
+        isOpen={!!activeChatReservationId}
+        onClose={() => {
+          const sharedReservations = getStoredReservations();
+          setReservations((previous) => previous.map((item) => sharedReservations.some((reservation) => reservation.id === item.id && reservation.status === "COMPLETADA")
+            ? { ...item, status: "closed" }
+            : item));
+          setActiveChatReservationId(null);
+        }}
+        reservationId={activeChatReservationId}
+        currentUser={user}
       />
     </main>
   );

@@ -5,9 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
+import OllaVerdeStamp from "@/components/OllaVerdeStamp";
 import {
   getStoredDishes,
+  getStoredReviews,
+  sharesResidentialComplex,
   DishItem,
+  Review,
   UserProfile,
 } from "@/lib/ollacercana-store";
 import ReputationModal from "@/components/modals/ReputationModal";
@@ -58,6 +62,7 @@ interface CartItem {
   image: string;
   quantity: number;
   dishId?: string;
+  residentialComplex?: string;
 }
 
 export default function MenuPage() {
@@ -67,7 +72,11 @@ export default function MenuPage() {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<"recommended" | "price-asc">("recommended");
+  const [sortBy, setSortBy] = useState<"recommended" | "price-asc" | "rating-desc" | "reviews-desc">("recommended");
+  const [minimumRating, setMinimumRating] = useState(0);
+  const [reviewSentiment, setReviewSentiment] = useState<"all" | "positive" | "negative">("all");
+  const [featuredCooksOnly, setFeaturedCooksOnly] = useState(false);
+  const [publishedReviews, setPublishedReviews] = useState<Review[]>([]);
   const [withinTwoKm, setWithinTwoKm] = useState(true);
   const [selectedDietaryTag, setSelectedDietaryTag] = useState<string>("Todos");
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,21 +92,23 @@ export default function MenuPage() {
   const [chatReservationId, setChatReservationId] = useState<string | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{ reservationId: string; cookId: string } | null>(null);
 
-  const currentUser: UserProfile = {
+  const [currentUser, setCurrentUser] = useState<UserProfile>({
     name: "Ana María",
     email: "anamaria@example.com",
     phone: "3001234567",
     phoneVerified: true,
     role: "comprador",
     residentialComplex: "Conjunto San Luis",
-  };
+  });
 
   React.useEffect(() => {
     setStoredDishesList(getStoredDishes());
+    setPublishedReviews(getStoredReviews().filter((review) => review.status !== "Pendiente"));
     try {
       const storedUser = window.localStorage.getItem("ollacercana_user");
       const parsedUser = storedUser ? JSON.parse(storedUser) as UserProfile & { isLoggedIn?: boolean } : null;
       setIsAuthenticated(Boolean(parsedUser?.isLoggedIn));
+      if (parsedUser?.isLoggedIn) setCurrentUser(parsedUser);
     } catch {
       setIsAuthenticated(false);
     }
@@ -236,7 +247,7 @@ export default function MenuPage() {
       const existing = prev.find((item) => item.id === numId);
       if (existing) {
         return prev.map((item) =>
-          item.id === numId ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === numId ? { ...item, quantity: item.quantity + 1, residentialComplex: dish.residentialComplex } : item
         );
       }
       return [
@@ -249,6 +260,7 @@ export default function MenuPage() {
           image: dish.image,
           quantity: 1,
           dishId: String(dish.id),
+          residentialComplex: dish.residentialComplex,
         },
       ];
     });
@@ -306,6 +318,16 @@ export default function MenuPage() {
     createdAt: new Date().toISOString(),
   })));
 
+  const cookReviewsFor = (dish: DishItem) => publishedReviews.filter((review) => review.cookId === dish.cookId);
+  const getDishRating = (dish: DishItem) => Number.parseFloat(String(dish.rating).replace(",", ".")) || 0;
+  const isFeaturedCook = (dish: DishItem) => {
+    const reviews = cookReviewsFor(dish);
+    if (!reviews.length) return false;
+    const average = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+    // Mismo criterio que usa la insignia "Cocinera Destacada" en Opiniones.
+    return average >= 4.8 && reviews.length >= 3;
+  };
+
   const filteredDishes = dynamicDishes.filter((dish) => {
     const matchesCategory =
       activeFilter === "Todos" || activeFilter === "Filtros" || dish.category === activeFilter;
@@ -317,8 +339,19 @@ export default function MenuPage() {
       dish.cook.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesAvailability = !availableOnly || (dish.status === "DISPONIBLE" && dish.availablePortions > 0);
     const matchesDistance = !withinTwoKm || dish.distanceMeters <= 2000;
-    return matchesCategory && matchesTag && matchesSearch && matchesAvailability && matchesDistance;
-  }).sort((a, b) => sortBy === "price-asc" ? a.price - b.price : 0);
+    const matchesRating = getDishRating(dish) >= minimumRating;
+    const cookReviews = cookReviewsFor(dish);
+    const matchesSentiment = reviewSentiment === "all" || cookReviews.some((review) =>
+      reviewSentiment === "positive" ? review.rating >= 4 : review.rating <= 2,
+    );
+    const matchesFeatured = !featuredCooksOnly || isFeaturedCook(dish);
+    return matchesCategory && matchesTag && matchesSearch && matchesAvailability && matchesDistance && matchesRating && matchesSentiment && matchesFeatured;
+  }).sort((a, b) => {
+    if (sortBy === "price-asc") return a.price - b.price;
+    if (sortBy === "rating-desc") return getDishRating(b) - getDishRating(a);
+    if (sortBy === "reviews-desc") return b.reviews - a.reviews;
+    return 0;
+  });
 
   const recipeNotes: Record<string, {
     badge: string;
@@ -389,8 +422,8 @@ export default function MenuPage() {
     const numericId = typeof dish.id === "number" ? dish.id : parseInt(String(dish.id).replace(/\D/g, ""), 10) || 999;
     const existing = cart.find((item) => item.id === numericId);
     const nextCart = existing
-      ? cart.map((item) => item.id === numericId ? { ...item, quantity: item.quantity + 1 } : item)
-      : [...cart, { id: numericId, dishId: String(dish.id), name: dish.name, cook: dish.cook, price: dish.price, image: dish.image, quantity: 1 }];
+      ? cart.map((item) => item.id === numericId ? { ...item, quantity: item.quantity + 1, residentialComplex: dish.residentialComplex } : item)
+      : [...cart, { id: numericId, dishId: String(dish.id), name: dish.name, cook: dish.cook, price: dish.price, image: dish.image, quantity: 1, residentialComplex: dish.residentialComplex }];
     setCart(nextCart);
     window.localStorage.setItem("ollacercana_menu_cart", JSON.stringify(nextCart));
     router.push("/pedido");
@@ -444,7 +477,7 @@ export default function MenuPage() {
     window.dispatchEvent(new CustomEvent("ollacercana:assistant-request", { detail: { intent, dish } }));
   }, [cartReady, dynamicDishes, isAuthenticated]);
 
-  const showReferenceRecipes = activeFilter === "Todos" && selectedDietaryTag === "Todos" && searchQuery.trim() === "" && !availableOnly && sortBy === "recommended" && withinTwoKm;
+  const showReferenceRecipes = activeFilter === "Todos" && selectedDietaryTag === "Todos" && searchQuery.trim() === "" && !availableOnly && sortBy === "recommended" && withinTwoKm && minimumRating === 0 && reviewSentiment === "all" && !featuredCooksOnly;
   const sideRecipeDish = showReferenceRecipes ? filteredDishes.find((dish) => dish.name === "Lentejas con arroz") : undefined;
   const mainRecipeDishes = showReferenceRecipes
     ? filteredDishes.filter((dish) => dish.name !== "Lentejas con arroz")
@@ -469,6 +502,7 @@ export default function MenuPage() {
   ];
 
   const renderRecipeCard = (name: string, dish?: DishItem, compact = false, featured = false, lowerRow = false) => {
+    const sameCommunity = Boolean(dish && sharesResidentialComplex(currentUser.residentialComplex, dish.residentialComplex));
     const isSeedRecipe = /^dish-[1-6]$/.test(dish?.id ?? "");
     const note = (isSeedRecipe ? recipeNotes[name] : undefined) ?? (dish ? {
       badge: dish.badge || "De la cocina del barrio",
@@ -507,7 +541,7 @@ export default function MenuPage() {
           <div className={`relative mt-1 grid items-center gap-2 ${compact ? "grid-cols-[minmax(0,1fr)_64px] xl:grid-cols-[minmax(0,1fr)_92px]" : "grid-cols-[minmax(0,1fr)_70px] xl:grid-cols-[minmax(0,1fr)_104px]"}`}>
             <div className={`min-w-0 font-['Caveat',cursive] ${compact || featured ? "text-[12px] leading-tight" : "text-[13px] leading-tight"}`}>
               <p className="line-clamp-1 text-[#5b4a38]">{dish?.description || `Preparado en casa por ${dish?.cook || "una cocinera del barrio"}.`}</p>
-              <p className="mt-1 truncate text-[12px] font-bold text-[#52663d]">Por {dish?.cook || "cocina vecina"}</p>
+              {dish ? <Link href={`/cocineras/${dish.cookId}`} className="mt-1 block truncate text-[12px] font-bold text-[#52663d] underline decoration-dotted underline-offset-2 hover:text-[#a84029]">Por {dish.cook}</Link> : <p className="mt-1 truncate text-[12px] font-bold text-[#52663d]">Por cocina vecina</p>}
             </div>
             <div className={`relative mt-2 overflow-hidden rounded-[47%_53%_51%_49%/45%_42%_58%_55%] border-[3px] border-[#6b5037] bg-[#e6d4b0] shadow-[0_3px_5px_rgba(66,43,24,.25)] ${compact ? "h-[64px] w-[64px] xl:h-[92px] xl:w-[92px]" : "h-[70px] w-[70px] xl:h-[104px] xl:w-[104px]"}`}>
               {image ? (
@@ -527,9 +561,13 @@ export default function MenuPage() {
           )}
 
           {/* Trust Seal: Hygienic Verification */}
-          <div className="mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#dce4ce] border border-[#75865a]/60 text-[10px] font-bold text-[#42542e]">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-            <span>Cocina limpia & manipulación verificada</span>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-[#75865a]/60 bg-[#dce4ce] px-2 py-0.5 text-[10px] font-bold text-[#42542e]">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+              <span>Cocina limpia & manipulación verificada</span>
+            </div>
+            {dish && <OllaVerdeStamp residentialComplex={dish.residentialComplex} compact={compact} />}
+            {sameCommunity && <span title={`Cocinera y comprador pertenecen a ${dish?.residentialComplex}`} className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#687a49] bg-[#f2edcf] px-2 py-0.5 text-[10px] font-extrabold text-[#43552e]"><Home className="h-3 w-3" /> Mismo conjunto</span>}
           </div>
 
           {dish && <div className="mt-1 grid grid-cols-2 gap-1 rounded-lg border border-[#aa8b5e] bg-[#f7eddb] p-1.5 font-sans text-[10px] leading-tight text-[#493323]">
@@ -657,6 +695,10 @@ export default function MenuPage() {
             >
               <CookingPot className="w-3.5 h-3.5" />
               <span>Cocinas cercanas</span>
+            </Link>
+            <Link href="/cocineras" className="flex items-center gap-1.5 hover:text-[#C84B31] transition-colors">
+              <Users className="w-3.5 h-3.5" />
+              <span>Nuestras cocineras</span>
             </Link>
             <Link
               href="/cuenta/reservas"
@@ -866,12 +908,12 @@ export default function MenuPage() {
             </div>
 
             {/* ── 3. SEARCH & FILTERS ROW ── */}
-            <div id="explorar" className="flex flex-col items-start justify-between gap-3 lg:flex-row lg:items-center">
+            <div id="explorar" className="flex w-full flex-col items-stretch gap-3">
               <label className="relative block w-full lg:hidden">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#795f43]" />
                 <input aria-label="Buscar platos" type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Busca un plato..." className="w-full rounded-full border border-[#b99770]/60 bg-[#fff7e9]/85 py-2 pl-9 pr-3 font-['Patrick_Hand',cursive] text-sm text-[#493323] placeholder:text-[#80694d] focus:outline-none focus:ring-2 focus:ring-[#c84b31]/50" />
               </label>
-              <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex w-full flex-wrap items-center justify-between gap-2 pb-1">
                 {[
                   { id: "Todos", label: "Todos", icon: Utensils },
                   { id: "Almuerzos", label: "Almuerzos", icon: Utensils },
@@ -887,52 +929,79 @@ export default function MenuPage() {
                       key={btn.id}
                       onClick={() => btn.id === "Filtros" ? setFiltersOpen((open) => !open) : setActiveFilter(btn.id)}
                       aria-expanded={btn.id === "Filtros" ? filtersOpen : undefined}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition-all ${
+                      className={`flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-all ${
                         isActive
                           ? "bg-[#C84B31] text-white shadow-md shadow-red-950/20"
                           : "border border-white/70 bg-white/55 text-[#493323] hover:bg-white/85"
                       }`}
                     >
-                      <Icon className={`h-3 w-3 ${isActive ? "text-white" : "text-[#C84B31]"}`} />
+                      <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-[#C84B31]"}`} />
                       <span>{btn.label}</span>
                     </button>
                   );
                 })}
               </div>
-              <button type="button" onClick={() => setWithinTwoKm((current) => !current)} aria-pressed={withinTwoKm} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff7e9] ${withinTwoKm ? "border-[#f6e8cf]/90 bg-[#f8ecd7]/45 text-[#fff7e9]" : "border-[#f6e8cf]/60 bg-black/25 text-[#fff7e9]/80"}`}>
-                <MapPin className="h-3.5 w-3.5" />
-                <span>{withinTwoKm ? "Cocinas a menos de 2 km" : "Todas las distancias"}</span>
-              </button>
             </div>
 
             {filtersOpen && (
-              <div className="menu-paper flex flex-col gap-3 rounded-xl border border-[#b99770]/70 bg-[#fff7e9]/95 p-4 text-sm text-[#493323] shadow-lg sm:flex-row sm:items-center sm:justify-between" role="region" aria-label="Opciones de filtro">
-                <label className="flex cursor-pointer items-center gap-2">
+              <div className="menu-paper grid grid-cols-1 gap-4 rounded-xl border border-[#b99770]/70 bg-[#fff7e9]/95 p-4 text-sm text-[#493323] shadow-lg sm:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Opciones de filtro">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#d8c39c] bg-white/65 px-3 py-2">
                   <input type="checkbox" checked={availableOnly} onChange={(event) => setAvailableOnly(event.target.checked)} className="accent-[#C84B31]" />
                   Solo platos disponibles
                 </label>
-                <label className="flex items-center gap-2">
-                  <span>Ordenar por:</span>
-                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value as "recommended" | "price-asc")} className="rounded-lg border border-[#b99770] bg-white px-2 py-1 text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#d8c39c] bg-white/65 px-3 py-2">
+                  <input type="checkbox" checked={withinTwoKm} onChange={(event) => setWithinTwoKm(event.target.checked)} className="accent-[#C84B31]" />
+                  Cocinas a menos de 2 km
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#d8c39c] bg-white/65 px-3 py-2">
+                  <input type="checkbox" checked={featuredCooksOnly} onChange={(event) => setFeaturedCooksOnly(event.target.checked)} className="accent-[#C84B31]" />
+                  <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-amber-500 text-amber-600" /> Solo cocineras destacadas</span>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold">Ordenar platos</span>
+                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} className="rounded-lg border border-[#b99770] bg-white px-3 py-2 text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
                     <option value="recommended">Recomendados</option>
+                    <option value="rating-desc">Mejor promedio de estrellas</option>
+                    <option value="reviews-desc">Más calificaciones</option>
                     <option value="price-asc">Menor precio</option>
                   </select>
                 </label>
-                <button type="button" onClick={() => { setAvailableOnly(false); setSortBy("recommended"); }} className="w-fit rounded-full px-3 py-1 font-semibold text-[#a84029] underline decoration-dotted underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold">Calificación mínima</span>
+                  <select value={minimumRating} onChange={(event) => setMinimumRating(Number(event.target.value))} className="rounded-lg border border-[#b99770] bg-white px-3 py-2 text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                    <option value={0}>Todas las estrellas</option>
+                    <option value={4}>4 estrellas o más</option>
+                    <option value={3}>3 estrellas o más</option>
+                    <option value={2}>2 estrellas o más</option>
+                    <option value={1}>1 estrella o más</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold">Opiniones de la cocinera</span>
+                  <select value={reviewSentiment} onChange={(event) => setReviewSentiment(event.target.value as typeof reviewSentiment)} className="rounded-lg border border-[#b99770] bg-white px-3 py-2 text-[#493323] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
+                    <option value="all">Todas las opiniones</option>
+                    <option value="positive">Con opiniones positivas (4–5★)</option>
+                    <option value="negative">Con opiniones negativas (1–2★)</option>
+                  </select>
+                </label>
+                <p className="self-center text-xs leading-relaxed text-[#725d48] sm:col-span-2">
+                  Las opiniones se consultan por cocinera, porque las reseñas actuales no están asociadas a un plato específico. “Destacada” usa el mismo criterio visible en su perfil: promedio de 4,8 o más y al menos 3 opiniones publicadas.
+                </p>
+                <button type="button" onClick={() => { setAvailableOnly(false); setWithinTwoKm(true); setSortBy("recommended"); setMinimumRating(0); setReviewSentiment("all"); setFeaturedCooksOnly(false); }} className="w-fit self-center rounded-full px-3 py-2 font-semibold text-[#a84029] underline decoration-dotted underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C84B31]">
                   Limpiar filtros
                 </button>
               </div>
             )}
 
             {/* Dietary preferences; these tags are informational, not allergy guarantees. */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs sm:text-sm">
-              <span className="shrink-0 font-bold text-[#57412b]">Opciones de alimentación:</span>
+            <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 pb-1 text-sm">
+              <span className="mr-1 shrink-0 font-bold text-[#57412b]">Opciones de alimentación:</span>
               {["Todos", "Vegetariano", "Sin Gluten", "Sin Lactosa", "Vegano"].map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setSelectedDietaryTag(tag)}
                   aria-pressed={selectedDietaryTag === tag}
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                  className={`min-h-9 shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
                     selectedDietaryTag === tag
                       ? "bg-[#F0822D] text-white shadow-sm"
                       : "border border-white/75 bg-white/55 text-[#493323] hover:bg-white/85"
@@ -945,7 +1014,7 @@ export default function MenuPage() {
             {/* Section Heading */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e0c49a]/70 pb-2">
               <div className="space-y-1">
-                <h2 className="flex items-center gap-3 font-['Caveat',cursive] text-3xl font-bold text-[#2c1b10] drop-shadow-sm md:text-4xl">
+                <h2 className="flex items-center gap-3 font-['Caveat',cursive] text-4xl font-bold text-[#2c1b10] drop-shadow-sm md:text-5xl">
                   <span>¿Qué se te antoja hoy?</span>
                   <svg aria-hidden="true" viewBox="0 0 54 12" className="mt-2 h-3 w-14 text-[#C84B31]">
                     <path d="M2 8 C12 2, 19 10, 29 5 S44 4, 52 5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -1069,6 +1138,7 @@ export default function MenuPage() {
                           <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3 shrink-0 text-[#a84029]" />Distancia aprox. {dish.distance}</span>
                         </div>
                         <p className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-[10px] font-medium text-stone-600" title={dish.residentialComplex}><Home className="h-3 w-3 shrink-0 text-[#52663d]" /><span className="truncate">{dish.residentialComplex || "Conjunto por confirmar"}</span></p>
+                        {sharesResidentialComplex(currentUser.residentialComplex, dish.residentialComplex) && <span title="Esta cocinera pertenece a tu conjunto" className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-[#687a49] bg-[#f2edcf] px-2 py-0.5 text-[9px] font-extrabold text-[#43552e]"><Home className="h-3 w-3" /> Del mismo conjunto</span>}
                       </div>
                     </div>
 

@@ -1504,6 +1504,12 @@ export default function CocinerasCercanasPage() {
               {/* ACTIONS: Link to Libretón / Menu */}
               <div className="pt-2 flex flex-col sm:flex-row gap-3">
                 <Link
+                  href={`/cocineras/${selectedCook.id}`}
+                  className="flex-1 rounded-full border border-[#75865a] bg-[#dce4ce] px-5 py-3.5 text-center text-sm font-bold text-[#42542e] transition hover:bg-[#cdd9b9]"
+                >
+                  Conocer su perfil
+                </Link>
+                <Link
                   href="/menu"
                   className="flex-1 rounded-full bg-[#F0822D] px-6 py-3.5 text-center text-sm font-bold tracking-wide text-white shadow-md transition-all hover:bg-orange-600"
                 >

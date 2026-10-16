@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   DishItem,
   getStoredDishes,
@@ -9,9 +10,10 @@ import {
   Reservation,
   saveDishes,
   saveReservations,
+  sharesResidentialComplex,
   UserProfile,
 } from "@/lib/ollacercana-store";
-import { MapPin, Star, X, Flame, Sparkles, Clock, CreditCard, Plus, Minus, AlertTriangle, Upload, CheckCircle2, KeyRound, Banknote } from "lucide-react";
+import { MapPin, Star, X, Flame, Sparkles, Clock, CreditCard, Plus, Minus, AlertTriangle } from "lucide-react";
 
 interface ReservePortionModalProps {
   isOpen: boolean;
@@ -32,8 +34,6 @@ export default function ReservePortionModal({
 }: ReservePortionModalProps) {
   const [portions, setPortions] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<"Efectivo" | "Nequi" | "Llaves">("Nequi");
-  const [paymentReceipt, setPaymentReceipt] = useState("");
-  const [paymentReceiptName, setPaymentReceiptName] = useState("");
   const [pickupTime, setPickupTime] = useState("Lo antes posible (15-20 min)");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,8 +42,6 @@ export default function ReservePortionModal({
   const handleClose = () => {
     setPortions(1);
     setPaymentMethod("Nequi");
-    setPaymentReceipt("");
-    setPaymentReceiptName("");
     setPickupTime("Lo antes posible (15-20 min)");
     setError("");
     setSuccess("");
@@ -79,11 +77,6 @@ export default function ReservePortionModal({
       return;
     }
 
-    if (paymentMethod !== "Efectivo" && !paymentReceipt) {
-      setError("Adjunta el comprobante de pago para enviar la solicitud a la cocinera.");
-      return;
-    }
-
     setSubmitting(true);
 
     // 1. Create reservation item (HU-11)
@@ -98,15 +91,17 @@ export default function ReservePortionModal({
       dishName: dish.name,
       dishImage: dish.image,
       cookId: dish.cookId,
+      cookAvatar: dish.cookAvatar,
       cookName: dish.cook,
+      cookResidentialComplex: dish.residentialComplex,
+      buyerResidentialComplex: currentUser.residentialComplex,
+      isSameResidentialComplex: sharesResidentialComplex(currentUser.residentialComplex, dish.residentialComplex),
       buyerName: buyerDisplayName,
       buyerEmail: currentUser.email,
       portions,
       pricePerPortion: dish.price,
       totalPrice,
       preferredPaymentMethod: paymentMethod,
-      paymentReceipt: paymentReceipt || undefined,
-      paymentReceiptName: paymentReceiptName || undefined,
       pickupTime,
       status: "PENDIENTE",
       createdAt: now.toISOString(),
@@ -117,7 +112,7 @@ export default function ReservePortionModal({
     try {
       saveReservations([newReservation, ...currentReservations]);
     } catch {
-      setError("No se pudo guardar la solicitud. El comprobante ocupa demasiado espacio; adjunta una imagen más liviana o un PDF más pequeño.");
+      setError("No se pudo guardar la solicitud. Inténtalo de nuevo.");
       setSubmitting(false);
       return;
     }
@@ -144,8 +139,8 @@ export default function ReservePortionModal({
     saveDishes(updatedDishes);
 
     setSuccess(paymentMethod === "Efectivo"
-      ? "Solicitud enviada. La cocinera debe confirmar la reserva; el pago se acuerda al recoger."
-      : "Comprobante adjunto. La solicitud fue enviada a la cocinera para que pueda confirmar la reserva.");
+      ? "Solicitud enviada. La cocinera debe confirmarla; el pago se acuerda al recoger."
+      : "Solicitud enviada. Espera la confirmación de la cocinera antes de transferir; después podrás adjuntar el comprobante.");
     setTimeout(() => {
       onReservationCreated(newReservation.id);
       handleClose();
@@ -320,91 +315,23 @@ export default function ReservePortionModal({
                   <button
                     type="button"
                     key={method}
-                    onClick={() => {
-                      if (paymentMethod !== method) {
-                        setPaymentReceipt("");
-                        setPaymentReceiptName("");
-                        setError("");
-                      }
-                      setPaymentMethod(method);
-                    }}
-                    className={`py-2 px-2 text-xs rounded-xl border text-center font-bold transition-all ${
+                    onClick={() => { setPaymentMethod(method); setError(""); }}
+                    aria-pressed={paymentMethod === method}
+                    className={`min-w-0 rounded-xl border p-2 text-center text-xs font-bold transition-all ${
                       paymentMethod === method
-                        ? "bg-[#F0822D] border-[#F0822D] text-white shadow-md"
-                        : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100"
+                        ? "border-[#b94d2e] bg-[#fff0d7] text-[#432b1b] shadow-[0_0_0_2px_rgba(185,77,46,.18)]"
+                        : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
                     }`}
                   >
-                    <span className="flex items-center justify-center gap-1.5"><span className={`flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black ${method === "Nequi" ? "bg-[#e6007e] text-white" : method === "Llaves" ? "bg-[#526f42] text-white" : "bg-[#80694d] text-white"}`}>{method === "Nequi" ? "n" : method === "Llaves" ? <KeyRound className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}</span><span>{method === "Nequi" ? "nequi" : method}</span></span>
+                    <span className={`mx-auto mb-1.5 flex aspect-[3/2] w-full max-w-[96px] items-center justify-center overflow-hidden rounded-lg ${method === "Llaves" ? "bg-[#32005f]" : "bg-white"}`}>
+                      <Image src={method === "Nequi" ? "/images/nequi.jpg" : method === "Llaves" ? "/images/llaves.png" : "/images/efectivo.png"} alt={`Pago por ${method}`} width={96} height={64} className="h-full w-full object-contain" />
+                    </span>
+                    <span className="block">{method === "Llaves" ? "Llaves" : method === "Nequi" ? "Nequi" : "Efectivo"}</span>
                     {method === "Llaves" && <span className="mt-0.5 block text-[9px] uppercase tracking-wider opacity-75">Bre-B</span>}
                   </button>
                 ))}
               </div>
-              {paymentMethod !== "Efectivo" && (
-                <div className="rounded-xl border border-dashed border-[#c4a77d] bg-[#fff9ed] p-3 text-[#493323]">
-                  <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#c4a77d] bg-white px-3 py-2.5 text-xs font-bold text-[#493323] transition hover:bg-[#f7eddb]">
-                    {paymentReceipt ? <CheckCircle2 className="h-4 w-4 text-emerald-700" /> : <Upload className="h-4 w-4 text-[#a84029]" />}
-                    <span className="min-w-0 flex-1 truncate">{paymentReceiptName || "Adjuntar comprobante de pago"}</span>
-                    <input type="file" accept="image/*,application/pdf" className="sr-only" onChange={async (event) => {
-                      const file = event.target.files?.[0];
-                      if (!file) return;
-                      const supportedImage = file.type.startsWith("image/");
-                      const supportedPdf = file.type === "application/pdf";
-                      if (!supportedImage && !supportedPdf) {
-                        setError("Adjunta una imagen o un archivo PDF.");
-                        event.target.value = "";
-                        return;
-                      }
-                      const maxFileSize = supportedPdf ? 350 * 1024 : 8 * 1024 * 1024;
-                      if (file.size > maxFileSize) {
-                        setError(supportedPdf ? "El PDF debe pesar menos de 350 KB." : "La imagen original debe pesar menos de 8 MB.");
-                        event.target.value = "";
-                        return;
-                      }
-                      if (file.type.startsWith("image/")) {
-                        try {
-                          const bitmap = await createImageBitmap(file);
-                          const scale = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
-                          const canvas = document.createElement("canvas");
-                          canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-                          canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-                          canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-                          bitmap.close();
-                          const compressedImage = canvas.toDataURL("image/jpeg", 0.62);
-                          const compressedBytes = Math.ceil((compressedImage.length * 3) / 4);
-                          if (compressedBytes > 350 * 1024) {
-                            setError("La imagen sigue siendo pesada después de comprimirla. Adjunta una captura más pequeña.");
-                            event.target.value = "";
-                            return;
-                          }
-                          setPaymentReceipt(compressedImage);
-                          setPaymentReceiptName(file.name);
-                          setError("");
-                          return;
-                        } catch {
-                          setError("No pude leer esa imagen. Prueba con otra captura.");
-                          return;
-                        }
-                      }
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        if (typeof reader.result === "string") {
-                          const pdfBytes = Math.ceil((reader.result.length * 3) / 4);
-                          if (pdfBytes > 480 * 1024) {
-                            setError("El PDF es demasiado pesado para adjuntarlo. Usa un archivo de menos de 350 KB.");
-                            event.target.value = "";
-                            return;
-                          }
-                          setPaymentReceipt(reader.result);
-                          setPaymentReceiptName(file.name);
-                          setError("");
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }} />
-                  </label>
-                  <p className="mt-2 text-[11px] leading-snug text-[#6b563b]">Adjunta la imagen o PDF para que la cocinera pueda revisar el comprobante con tu solicitud.</p>
-                </div>
-              )}
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-900">{paymentMethod === "Efectivo" ? <>No tienes que pagar ahora. La cocinera confirmará la solicitud y acordarás el pago en efectivo al recoger.</> : <>No transfieras todavía. Primero la cocinera debe confirmar la solicitud; después podrás adjuntar el comprobante desde <strong>Mis pedidos</strong>.</>}</p>
             </div>
 
             {/* Estimated Pickup Time */}
@@ -435,7 +362,7 @@ export default function ReservePortionModal({
                     OllaCercana no procesa pagos:
                   </strong>
                   El total de <strong className="text-amber-950 font-black">{formattedTotal}</strong> se coordinará directamente{" "}
-                  {paymentMethod === "Efectivo" ? <>entre tú y <strong className="text-amber-950 font-black">{dish.cook}</strong> al recoger las porciones.</> : <>por {paymentMethod} fuera de OllaCercana. El comprobante acompaña la solicitud para que <strong className="text-amber-950 font-black">{dish.cook}</strong> lo revise y confirme la reserva.</>}
+                  {paymentMethod === "Efectivo" ? <>entre tú y <strong className="text-amber-950 font-black">{dish.cook}</strong> al recoger las porciones.</> : <>por {paymentMethod} fuera de OllaCercana. Espera a que <strong className="text-amber-950 font-black">{dish.cook}</strong> confirme antes de pagar; luego adjunta el comprobante en Mis pedidos.</>}
                 </div>
               </div>
             </div>
@@ -447,7 +374,7 @@ export default function ReservePortionModal({
                 disabled={submitting}
                 className="flex-1 py-3.5 px-6 rounded-full bg-gradient-to-r from-[#F0822D] to-[#E06F1A] hover:brightness-110 text-white font-bold text-sm transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-wait disabled:opacity-70"
               >
-                <span>{submitting ? "Enviando solicitud…" : paymentMethod === "Efectivo" ? "Enviar solicitud" : "Enviar comprobante y solicitud"} {!submitting && `(${formattedTotal}) →`}</span>
+                <span>{submitting ? "Enviando solicitud…" : "Enviar solicitud"} {!submitting && `(${formattedTotal}) →`}</span>
               </button>
 
               <button

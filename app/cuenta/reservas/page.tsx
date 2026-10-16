@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { ChangeEvent, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import BrandLogo from "@/components/BrandLogo";
-import AnimatedKitchenBackground from "@/components/AnimatedKitchenBackground";
 import AccountNav from "@/components/AccountNav";
+import OllaVerdeStamp from "@/components/OllaVerdeStamp";
 import ChatModal from "@/components/modals/ChatModal";
-import { getStoredReservations, getStoredNotifications, getStoredReviews, saveReviews, saveReservations, Review } from "@/lib/ollacercana-store";
+import OllaChatMark from "@/components/OllaChatMark";
+import { getStoredDishes, getStoredReservations, getStoredNotifications, getStoredReviews, saveReviews, saveReservations, sharesResidentialComplex, syncOllaVerdeProgressAfterCompletion, Review } from "@/lib/ollacercana-store";
 import {
   Clock,
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
   ShoppingBag,
   HelpCircle,
   Home,
+  Upload,
 } from "lucide-react";
 
 interface UserProfile {
@@ -58,15 +60,21 @@ interface Reservation {
   isAutoClosed?: boolean;
   rated?: boolean;
   cookName?: string;
+  cookResidentialComplex?: string;
+  buyerResidentialComplex?: string;
+  isSameResidentialComplex?: boolean;
   pickupTime?: string;
   paymentReceipt?: string;
   paymentReceiptName?: string;
+  dishImage?: string;
+  cookAvatar?: string;
 }
 
 const getDefaultReservations = (): Reservation[] => [
   {
     id: "RES-101",
     dish: "Guiso Tradicional en Cazuela",
+    dishImage: "/images/menu_cazuela.jpg",
     cookName: "Doña Elena",
     quantity: 2,
     buyerName: "Carlos Rodríguez",
@@ -110,6 +118,8 @@ export default function ReservasPage() {
   const [ratingComment, setRatingComment] = useState("");
   const [ratingError, setRatingError] = useState("");
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [receiptBusyId, setReceiptBusyId] = useState<string | null>(null);
+  const [receiptError, setReceiptError] = useState<{ reservationId: string; message: string } | null>(null);
 
   useEffect(() => {
     const savedUserJson = localStorage.getItem("ollacercana_user");
@@ -151,16 +161,22 @@ export default function ReservasPage() {
 
     try {
       const storeV2 = getStoredReservations();
+      const storedDishes = getStoredDishes();
       storeV2.forEach((sr) => {
         if (!loadedRes.some((r) => r.id === sr.id)) {
+          const cookResidentialComplex = sr.cookResidentialComplex || storedDishes.find((dish) => dish.id === sr.dishId)?.residentialComplex || "";
           loadedRes.unshift({
             id: sr.id,
             dish: sr.dishName,
+            dishImage: sr.dishImage,
             cookName: sr.cookName || "Doña Rosa",
             quantity: sr.portions,
             buyerName: sr.buyerName,
             buyerPhone: "3001234567",
             paymentMethod: sr.preferredPaymentMethod,
+            cookResidentialComplex,
+            buyerResidentialComplex: sr.buyerResidentialComplex || parsed.residentialComplex,
+            isSameResidentialComplex: sr.isSameResidentialComplex ?? sharesResidentialComplex(parsed.residentialComplex, cookResidentialComplex),
             paymentReceipt: sr.paymentReceipt,
             paymentReceiptName: sr.paymentReceiptName,
             price: `$${sr.totalPrice.toLocaleString("es-CO")}`,
@@ -175,7 +191,7 @@ export default function ReservasPage() {
             expiresAt: new Date(sr.expiresAt).getTime(),
             createdTimestamp: new Date(sr.createdAt).getTime(),
             cocineraConfirmedDelivery: !!sr.cookConfirmedDelivery,
-            cocineraConfirmedPayment: false,
+            cocineraConfirmedPayment: !!sr.cookConfirmedPayment,
             pickupTime: sr.pickupTime,
           });
         }
@@ -234,7 +250,18 @@ export default function ReservasPage() {
       console.error(e);
     }
 
-    setReservations(loadedRes);
+    const catalogueDishes = getStoredDishes();
+    const enrichedReservations = loadedRes.map((reservation) => {
+      const relatedDish = catalogueDishes.find((dish) =>
+        dish.name.toLocaleLowerCase("es") === reservation.dish.toLocaleLowerCase("es")
+      );
+      return {
+        ...reservation,
+        dishImage: reservation.dishImage || relatedDish?.image || "",
+        cookAvatar: reservation.cookAvatar || relatedDish?.cookAvatar || "",
+      };
+    });
+    setReservations(enrichedReservations);
 
     try {
       setUnreadCount(getStoredNotifications().filter((n) => (n.targetEmail === parsed.email || n.targetEmail === "usuario") && !n.read).length);
@@ -278,6 +305,8 @@ export default function ReservasPage() {
   };
 
   const handleSimulateCompradorConfirm = (resId: string) => {
+    const selectedReservation = reservations.find((reservation) => reservation.id === resId);
+    if (selectedReservation && selectedReservation.paymentMethod !== "Efectivo" && !selectedReservation.paymentReceipt) return;
     const updated = reservations.map((r) => {
       if (r.id === resId) {
         const compradorTimestamp = Date.now();
@@ -291,16 +320,95 @@ export default function ReservasPage() {
     });
     setReservations(updated);
     localStorage.setItem("ollacercana_reservations", JSON.stringify(updated));
-    saveReservations(getStoredReservations().map((reservation) => reservation.id === resId ? {
+    const completedAt = new Date().toISOString();
+    const savedReservations = getStoredReservations().map((reservation) => reservation.id === resId ? {
       ...reservation,
-      status: "COMPLETADA",
+      status: "COMPLETADA" as const,
+      completedAt,
       buyerConfirmedDelivery: true,
-    } : reservation));
+    } : reservation);
+    saveReservations(savedReservations);
+    const completedReservation = savedReservations.find((reservation) => reservation.id === resId);
+    if (completedReservation) syncOllaVerdeProgressAfterCompletion(completedReservation);
     setRatingStars(0);
     setRatingComment("");
     setRatingError("");
     setRatingSubmitted(false);
     setRatingResId(resId);
+  };
+
+  const handlePaymentReceiptUpload = async (resId: string, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setReceiptError(null);
+    if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+      setReceiptError({ reservationId: resId, message: "Adjunta una imagen o un archivo PDF." });
+      event.target.value = "";
+      return;
+    }
+
+    let receiptData: string;
+    if (file.type === "application/pdf") {
+      if (file.size > 350 * 1024) {
+        setReceiptError({ reservationId: resId, message: "El PDF debe pesar menos de 350 KB." });
+        event.target.value = "";
+        return;
+      }
+      receiptData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("No se pudo leer el PDF."));
+        reader.onerror = () => reject(new Error("No se pudo leer el comprobante. Intenta de nuevo."));
+        reader.readAsDataURL(file);
+      }).catch((reason: unknown) => {
+        setReceiptError({ reservationId: resId, message: reason instanceof Error ? reason.message : "No se pudo leer el comprobante." });
+        return "";
+      });
+      if (!receiptData) return;
+    } else {
+      if (file.size > 8 * 1024 * 1024) {
+        setReceiptError({ reservationId: resId, message: "La imagen original debe pesar menos de 8 MB." });
+        event.target.value = "";
+        return;
+      }
+      try {
+        const bitmap = await createImageBitmap(file);
+        const scale = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close();
+        receiptData = canvas.toDataURL("image/jpeg", 0.62);
+        if (Math.ceil((receiptData.length * 3) / 4) > 350 * 1024) {
+          setReceiptError({ reservationId: resId, message: "La imagen sigue siendo pesada después de comprimirla. Adjunta una captura más pequeña." });
+          event.target.value = "";
+          return;
+        }
+      } catch {
+        setReceiptError({ reservationId: resId, message: "No pude leer esa imagen. Prueba con otra captura." });
+        event.target.value = "";
+        return;
+      }
+    }
+
+    setReceiptBusyId(resId);
+    const updated = reservations.map((reservation) => reservation.id === resId
+      ? { ...reservation, paymentReceipt: receiptData, paymentReceiptName: file.name }
+      : reservation);
+    try {
+      const storedV2 = getStoredReservations().map((reservation) => reservation.id === resId
+        ? { ...reservation, paymentReceipt: receiptData, paymentReceiptName: file.name }
+        : reservation);
+      saveReservations(storedV2);
+      localStorage.setItem("ollacercana_reservations", JSON.stringify(updated));
+      setReservations(updated);
+      setReceiptError(null);
+    } catch {
+      setReceiptError({ reservationId: resId, message: "No se pudo guardar el comprobante. Intenta con un archivo más liviano." });
+    } finally {
+      setReceiptBusyId(null);
+      event.target.value = "";
+    }
   };
 
   const handleRatingSubmit = () => {
@@ -335,6 +443,18 @@ export default function ReservasPage() {
     setRatingError("");
   };
 
+  const activeReservations = reservations.filter((reservation) => reservation.status === "pending" || reservation.status === "confirmed");
+  const historyReservations = reservations.filter((reservation) => reservation.status === "closed" || reservation.status === "rejected");
+  const visibleReservations = reservations.filter((reservation) => compradorSubTab === "activas"
+    ? reservation.status === "pending" || reservation.status === "confirmed"
+    : reservation.status === "closed" || reservation.status === "rejected");
+  const completedTotal = reservations
+    .filter((reservation) => reservation.status === "closed")
+    .reduce((sum, reservation) => sum + Number(reservation.price.replace(/[^0-9]/g, "")), 0);
+  const activeTotal = activeReservations
+    .reduce((sum, reservation) => sum + Number(reservation.price.replace(/[^0-9]/g, "")), 0);
+  const formatCurrency = (amount: number) => `$${amount.toLocaleString("es-CO")}`;
+
   if (checkingSession || !user) {
     return (
       <main data-theme-page className="relative min-h-screen w-full bg-[#14110f] flex items-center justify-center">
@@ -344,47 +464,31 @@ export default function ReservasPage() {
   }
 
   return (
-    <main data-theme-page className="relative min-h-screen w-full bg-[#14110f] text-[#f4efe6] font-['Outfit',sans-serif] overflow-x-hidden flex flex-col justify-between selection:bg-[#F0822D] selection:text-white">
-      <AnimatedKitchenBackground />
-
-      <header className="relative z-10 w-full pt-10 pb-6 px-6 flex flex-col items-center justify-center text-center">
-        <Link href="/" className="cursor-pointer group transition-transform hover:scale-105">
-          <BrandLogo size="lg" showTagline={true} taglineColor="text-stone-200 drop-shadow-md" />
+    <main data-theme-page className="relative flex min-h-dvh w-full flex-col overflow-x-hidden bg-[#25271f] font-['Outfit',sans-serif] text-[#f4efe6] selection:bg-[#F0822D] selection:text-white">
+      <header className="relative z-10 flex h-14 w-full items-center justify-start px-4 sm:px-7">
+        <Link href="/" aria-label="OllaCercana, ir al inicio" className="group inline-flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0822D]">
+          <img src="/brand/ollacercana-icon.svg" alt="OllaCercana" className="h-10 w-10 object-contain drop-shadow-md" />
         </Link>
       </header>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-4xl bg-black/75 backdrop-blur-xl border-2 border-[#8B5E34]/50 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-black/60 space-y-8 my-6">
+      <div className="relative z-10 w-full flex-1 px-0">
+        <div className="relative mx-auto min-h-[calc(100dvh-180px)] w-full overflow-hidden rounded-[30px] border-[10px] border-[#55331e] bg-[#414231] shadow-[0_24px_70px_rgba(0,0,0,.55),inset_0_0_0_2px_rgba(224,185,123,.35)]">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: "repeating-linear-gradient(4deg, transparent 0 28px, rgba(232,190,129,.14) 29px, transparent 31px), linear-gradient(100deg, rgba(255,255,255,.08), transparent 28%, rgba(0,0,0,.22) 74%, transparent)" }} />
+          <div className="relative px-4 py-5 sm:px-7 sm:py-6">
           <AccountNav user={user} current="reservas" unreadCount={unreadCount} />
 
-          <div className="space-y-6 text-left">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-[#131F18] border border-emerald-600/30 rounded-2xl p-4 shadow-md">
-              <div>
-                <h4 className="font-['Caveat',cursive] text-2xl font-bold text-[#F4C430] flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-emerald-400" />
-                  <span>Mis Reservas y Pedidos Realizados</span>
-                </h4>
-                <p className="text-xs text-stone-300">
-                  Gestiona tus reservas activas en tiempo real o revisa tu historial para volver a pedir tus platos favoritos.
-                </p>
-              </div>
-              <Link
-                href="/menu"
-                className="px-4 py-2 rounded-xl bg-[#F0822D] hover:bg-[#d97224] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Hacer Nuevo Pedido</span>
-              </Link>
-            </div>
+          <div className="mt-7 grid items-start gap-6 text-left xl:grid-cols-[minmax(0,1fr)_290px]">
+          <section className="min-w-0 space-y-6">
+            <h1 className="sr-only">Mis pedidos</h1>
 
             {/* Sub-tabs: Reservas Activas vs Historial de Reservas */}
-            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+            <div className="flex flex-wrap items-center gap-3 rounded-[18px] border-[4px] border-[#57351f] bg-[linear-gradient(115deg,#80502d,#59371f_50%,#80502d)] p-2.5 shadow-[0_6px_0_rgba(30,20,14,.3),inset_0_1px_0_rgba(255,224,174,.35)]">
               <button
                 onClick={() => setCompradorSubTab("activas")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   compradorSubTab === "activas"
-                    ? "bg-[#62B869] text-white shadow"
-                    : "bg-black/40 border border-white/10 text-stone-400 hover:text-white"
+                    ? "bg-[#66704d] text-white shadow"
+                    : "border border-[#d7c09c] bg-[#f3e6cb] text-[#493323] hover:bg-white"
                 }`}
               >
                 Reservas Activas ({reservations.filter((r) => r.status === "pending" || r.status === "confirmed").length})
@@ -393,45 +497,43 @@ export default function ReservasPage() {
                 onClick={() => setCompradorSubTab("historial")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   compradorSubTab === "historial"
-                    ? "bg-amber-600 text-white shadow"
-                    : "bg-black/40 border border-white/10 text-stone-400 hover:text-white"
+                    ? "bg-[#a8432a] text-white shadow"
+                    : "border border-[#d7c09c] bg-[#f3e6cb] text-[#493323] hover:bg-white"
                 }`}
               >
                 Historial y Volver a Pedir ({reservations.filter((r) => r.status === "closed" || r.status === "rejected").length})
               </button>
             </div>
 
-            {reservations.length === 0 ? (
-              <div className="p-10 rounded-2xl bg-black/60 border border-white/10 text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-stone-800 flex items-center justify-center mx-auto text-stone-400">
+            {visibleReservations.length === 0 ? (
+              <div className="space-y-4 rounded-2xl border-4 border-[#684326] bg-[#e9d5ae] p-10 text-center text-[#38281b] shadow-lg">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#bd9360] bg-[#f7edda] text-[#96512c] shadow-inner">
                   <ShoppingBag className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
-                  <h5 className="text-base font-bold text-white">No tienes reservas registradas</h5>
-                  <p className="text-xs text-stone-400 max-w-sm mx-auto">
+                  <h5 className="text-lg font-bold">{compradorSubTab === "activas" ? "No tienes pedidos activos" : "Tu historial está vacío"}</h5>
+                  <p className="mx-auto max-w-sm text-sm text-[#725b42]">
                     Explora El Libretón de platos caseros preparados hoy por tus vecinas.
                   </p>
                 </div>
                 <Link
                   href="/menu"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#F0822D] hover:bg-[#d97224] text-white font-bold text-xs transition-all shadow-lg"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#6a391f] bg-[#a8432a] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#8e3522]"
                 >
                   <span>Ir a El Libretón</span>
                 </Link>
               </div>
             ) : (
               <div className="space-y-4">
-                {reservations
-                  .filter((res) =>
-                    compradorSubTab === "activas"
-                      ? res.status === "pending" || res.status === "confirmed"
-                      : res.status === "closed" || res.status === "rejected"
-                  )
+                {visibleReservations
                   .map((res) => (
                     <div
                       key={res.id}
-                      className="p-5 rounded-2xl bg-[#efe0c2] border border-[#bda078] text-[#2b2117] space-y-4 shadow-lg hover:border-[#c84b31]/70 transition-all"
+                      className="group relative rounded-[20px] border-[5px] border-[#57351f] bg-[linear-gradient(135deg,#9a6032,#73431f_36%,#a66b38_66%,#69401f)] p-2 shadow-[0_8px_0_rgba(30,20,14,.35),inset_0_1px_0_rgba(255,224,174,.45)] transition-transform hover:-translate-y-0.5"
                     >
+                      <span aria-hidden="true" className="absolute -left-2 top-1/2 z-10 h-5 w-5 -translate-y-1/2 rounded-full border-2 border-[#4a2b1b] bg-[#b78a5a] shadow-inner" />
+                      <span aria-hidden="true" className="absolute -right-2 top-1/2 z-10 h-5 w-5 -translate-y-1/2 rounded-full border-2 border-[#4a2b1b] bg-[#b78a5a] shadow-inner" />
+                      <div className="space-y-4 rounded-[12px] border border-[#d4b07d]/70 bg-[#f3e6cb] p-4 pt-5 text-[#34251a] sm:p-5">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-[#ae9066] pb-3">
                         <div>
                           <div className="flex items-center gap-2">
@@ -440,7 +542,17 @@ export default function ReservasPage() {
                               · Cocina de <strong className="text-[#52663d]">{res.cookName || "Doña Elena"}</strong>
                             </span>
                           </div>
-                          <h5 className="text-base font-bold text-[#2b2117] mt-0.5">{res.dish}</h5>
+                          <div className="mt-2 flex items-center gap-3">
+                            <div className="relative h-[68px] w-[82px] shrink-0 overflow-hidden rounded-xl border border-[#d7c09c] bg-[#efe0c2]">
+                              {res.dishImage ? <Image src={res.dishImage} alt={res.dish} fill sizes="82px" className="object-cover" /> : <div className="flex h-full items-center justify-center text-[#9a7149]"><ShoppingBag className="h-7 w-7" /></div>}
+                            </div>
+                            <div>
+                              <h5 className="text-lg font-bold text-[#2b2117]">{res.dish}</h5>
+                              <p className="mt-0.5 text-xs text-[#80694d]">Preparado por {res.cookName || "Doña Elena"}</p>
+                            </div>
+                          </div>
+                          {res.isSameResidentialComplex && <span title={`Tú y ${res.cookName || "la cocinera"} pertenecen a ${res.cookResidentialComplex || res.buyerResidentialComplex}`} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-dashed border-[#687a49] bg-[#edf0dc] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#43552e]"><Home className="h-3.5 w-3.5" /> Mismo conjunto</span>}
+                          <div className="mt-2"><OllaVerdeStamp residentialComplex={res.cookResidentialComplex} compact /></div>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -493,9 +605,9 @@ export default function ReservasPage() {
 
                       <div aria-label="Proceso del pedido" className="rounded-xl border border-[#c4a77d] bg-[#f7eddb] p-3">
                         <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#80694d]">Así avanza tu pedido</p>
-                        <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                          {[res.paymentReceipt ? "Comprobante enviado" : "Solicitud enviada", "Cocinera confirma", "Preparación y entrega", "Recibido"].map((step, index) => {
-                            const activeStep = res.status === "closed" ? 3 : res.status === "confirmed" ? (res.cocineraConfirmedDelivery ? 2 : 1) : 0;
+                        <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                          {["Solicitud enviada", "Cocinera confirma", res.paymentMethod === "Efectivo" ? "Pago al recoger" : res.paymentReceipt ? "Comprobante enviado" : "Adjunta comprobante", "Preparación y entrega", "Recibido"].map((step, index) => {
+                            const activeStep = res.status === "closed" ? 4 : res.status === "confirmed" ? (res.cocineraConfirmedDelivery ? 3 : res.paymentMethod === "Efectivo" ? (res.cocineraConfirmedPayment ? 2 : 1) : res.paymentReceipt ? 2 : 1) : 0;
                             const done = index <= activeStep;
                             const current = !done && ((res.status === "pending" && index === 1) || (res.status === "confirmed" && index === activeStep + 1));
                             return <li key={step} className={`flex items-center gap-1.5 text-[10px] leading-tight ${done ? "text-[#304522]" : current ? "text-[#70430c]" : "text-[#594735]"}`}><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[9px] font-bold ${done ? "border-[#708b59] bg-[#e4efd8] text-[#304522]" : current ? "border-[#d6a248] bg-[#fff0cf] text-[#70430c]" : "border-[#9b8567] bg-[#f5e9d2] text-[#594735]"}`}>{done ? "✓" : index + 1}</span>{step}</li>;
@@ -504,6 +616,22 @@ export default function ReservasPage() {
                         {res.paymentReceipt && <a href={res.paymentReceipt} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[11px] font-bold text-[#304522] underline underline-offset-2">Comprobante adjunto: {res.paymentReceiptName || "ver archivo"}</a>}
                       </div>
 
+                      {res.status === "confirmed" && res.paymentMethod !== "Efectivo" && !res.paymentReceipt && (
+                        <div className="rounded-xl border border-[#d4a64a] bg-[#fff4dc] p-4 text-[#5b3d1f]">
+                          <p className="text-sm font-bold">La cocinera confirmó tu pedido</p>
+                          <p className="mt-1 text-xs leading-relaxed">Ahora coordina y realiza el pago por {res.paymentMethod}. Cuando lo hayas hecho, adjunta aquí el comprobante para que la cocinera pueda revisarlo.</p>
+                          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#b98a52] bg-white px-4 py-3 text-sm font-bold text-[#493323] shadow-sm transition hover:bg-[#f7eddb]">
+                            <Upload className="h-4 w-4 text-[#a84029]" />
+                            <span>{receiptBusyId === res.id ? "Guardando comprobante…" : "Adjuntar comprobante"}</span>
+                            <input type="file" accept="image/*,application/pdf" className="sr-only" disabled={receiptBusyId === res.id} onChange={(event) => void handlePaymentReceiptUpload(res.id, event)} />
+                          </label>
+                          {receiptError?.reservationId === res.id && receiptBusyId === null && <p role="alert" className="mt-2 text-xs font-semibold text-red-800">{receiptError.message}</p>}
+                        </div>
+                      )}
+                      {res.status === "confirmed" && res.paymentMethod !== "Efectivo" && res.paymentReceipt && (
+                        <p className="rounded-lg border border-[#a8bc93] bg-[#eaf2e3] px-3 py-2 text-xs font-semibold text-[#304522]">Comprobante enviado. La cocinera puede revisarlo antes de continuar.</p>
+                      )}
+
                       {res.status === "rejected" && (
                         <div className="p-3 rounded-xl bg-[#f5ded7] border border-[#ad6c59] text-[#763725] text-xs">
                           <strong>Motivo de rechazo:</strong> {res.rejectionReason || "Sin porciones disponibles"}
@@ -511,14 +639,13 @@ export default function ReservasPage() {
                         </div>
                       )}
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-dashed border-[#d7c09c]">
                         <button
                           onClick={() => setActiveChatReservationId(res.id)}
-                          disabled={res.status === "closed"}
-                          className="px-4 py-2 rounded-xl bg-stone-900 border border-white/15 hover:border-[#F0822D] text-stone-200 hover:text-white text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                          className="px-4 py-2 rounded-xl border border-[#6a391f] bg-[#a8432a] text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#8e3522]"
                         >
-                          <MessageSquare className="w-4 h-4 text-[#F0822D]" />
-                          <span>{res.status === "closed" ? "Chat finalizado" : "Chat con cocinera"}</span>
+                          <OllaChatMark className="h-6 w-7" />
+                          <span>{res.status === "closed" || res.status === "rejected" ? "Ver conversación" : "Chat con cocinera"}</span>
                         </button>
 
                         {compradorSubTab === "historial" && (
@@ -531,7 +658,7 @@ export default function ReservasPage() {
                           </Link>
                         )}
 
-                        {res.status === "confirmed" && !res.compradorClosedAt && (
+                        {res.status === "confirmed" && !res.compradorClosedAt && (res.paymentMethod === "Efectivo" || !!res.paymentReceipt) && (
                           <button
                             onClick={() => handleSimulateCompradorConfirm(res.id)}
                             className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
@@ -540,38 +667,76 @@ export default function ReservasPage() {
                             <span>Marcar pedido recibido y cerrar chat</span>
                           </button>
                         )}
+                        {res.status === "confirmed" && !res.compradorClosedAt && res.paymentMethod !== "Efectivo" && !res.paymentReceipt && (
+                          <p className="w-full text-right text-[11px] font-semibold text-[#80512b]">Adjunta el comprobante antes de marcar el pedido como recibido.</p>
+                        )}
                       </div>
 
                       {res.status === "confirmed" && res.compradorClosedAt && !res.cocineraClosedAt && (
-                        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-center gap-1.5">
+                          <div className="p-2.5 rounded-lg bg-[#fff1d2] border border-[#dfbd72] text-[#70430c] text-[11px] flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5" />
                           <span>Confirmación pendiente por la cocinera.</span>
                         </div>
                       )}
 
                       {res.status === "closed" && (
-                        <div className="p-3 rounded-xl bg-sky-950/60 border border-sky-500/40 flex items-center justify-between text-xs text-sky-200">
+                        <div className="p-3 rounded-xl bg-[#eaf2e3] border border-[#a8bc93] flex items-center justify-between text-xs text-[#304522]">
                           <span className="flex items-center gap-2 font-semibold">
-                            <CheckCircle2 className="w-4 h-4 text-sky-400" />
+                            <CheckCircle2 className="w-4 h-4 text-[#526c3b]" />
                             Transacción completada {res.isAutoClosed ? "(Cierre automático por 24h)" : ""}
                           </span>
 
                           {!res.rated ? (
                             <button
                               onClick={() => { setRatingStars(0); setRatingComment(""); setRatingError(""); setRatingSubmitted(false); setRatingResId(res.id); }}
-                              className="px-4 py-1.5 rounded-lg bg-sky-400 hover:bg-sky-300 text-black font-bold text-xs transition-colors cursor-pointer"
+                              className="px-4 py-1.5 rounded-lg bg-[#526c3b] hover:bg-[#40572e] text-white font-bold text-xs transition-colors cursor-pointer"
                             >
                               Calificar
                             </button>
                           ) : (
-                            <span className="text-amber-300 font-mono">★ Reseña enviada · pendiente de publicación</span>
+                            <span className="text-[#8a6743] font-mono">★ Reseña enviada · pendiente de publicación</span>
                           )}
                         </div>
                       )}
+                      </div>
                     </div>
                   ))}
               </div>
             )}
+          </section>
+
+          <aside className="space-y-5 lg:sticky lg:top-6">
+            <div className="rounded-[22px] border-[5px] border-[#57351f] bg-[linear-gradient(115deg,#9a6032,#75431f_38%,#a66b38_62%,#68401f)] p-2 shadow-[0_8px_0_rgba(30,20,14,.35),inset_0_1px_0_rgba(255,224,174,.45)]">
+              <div className="rounded-[13px] border border-[#d4b07d]/70 bg-[#f3e6cb] text-[#34251a]">
+              <div className="border-b border-dashed border-[#b99767] bg-[#ead7b5] px-5 py-4">
+                <h2 className="font-['Caveat',cursive] text-2xl font-bold text-[#432b1b]">Resumen de pedidos</h2>
+                <p className="text-xs text-[#80694d]">Tus compras del vecindario, siempre a mano.</p>
+              </div>
+              <div className="space-y-4 p-5">
+                <div className="flex items-center justify-between text-sm"><span className="text-[#725b42]">Pedidos activos</span><strong className="rounded-full bg-[#e8f0df] px-2.5 py-1 text-[#40572e]">{activeReservations.length}</strong></div>
+                <div className="flex items-center justify-between text-sm"><span className="text-[#725b42]">En el historial</span><strong className="rounded-full bg-[#f4e4d0] px-2.5 py-1 text-[#80512b]">{historyReservations.length}</strong></div>
+                <div className="border-t border-dashed border-[#c9a879] pt-4">
+                  <p className="text-xs text-[#80694d]">{compradorSubTab === "activas" ? "Valor de pedidos activos" : "Total de pedidos completados"}</p>
+                  <p className="mt-1 text-3xl font-bold tracking-tight text-[#a74427]">{formatCurrency(compradorSubTab === "activas" ? activeTotal : completedTotal)}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[#80694d]">El pago se acuerda directamente con cada cocinera. OllaCercana no procesa pagos.</p>
+                </div>
+                <Link href="/menu" className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#bd482b] px-4 py-3 text-sm font-bold text-white shadow transition hover:bg-[#a83a21]"><PlusCircle className="h-4 w-4" /> Buscar algo rico</Link>
+              </div>
+              </div>
+            </div>
+            <div className="rounded-[22px] border-[5px] border-[#57351f] bg-[linear-gradient(115deg,#80502d,#59371f_50%,#80502d)] p-2 shadow-[0_8px_0_rgba(30,20,14,.3),inset_0_1px_0_rgba(255,224,174,.35)]">
+              <div className="rounded-[13px] border border-[#d4b07d]/70 bg-[#f3e6cb] p-5 text-[#34251a]">
+              <p className="font-['Caveat',cursive] text-2xl font-bold text-[#493323]">Compra con confianza</p>
+              <ul className="mt-4 space-y-3 text-sm text-[#493626]">
+                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#526c3b]" /> Sigue cada paso de tu pedido.</li>
+                <li className="flex gap-2"><MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-[#bd482b]" /> Coordina la entrega dentro de la plataforma.</li>
+                <li className="flex gap-2"><Star className="mt-0.5 h-4 w-4 shrink-0 text-[#bd7b24]" /> Califica cuando la compra se complete.</li>
+              </ul>
+              <Link href="/ayuda" className="mt-4 inline-flex text-sm font-bold text-[#8e3f28] underline underline-offset-4">¿Necesitas ayuda?</Link>
+              </div>
+            </div>
+          </aside>
+          </div>
           </div>
         </div>
       </div>
@@ -641,7 +806,17 @@ export default function ReservasPage() {
       {user && (
         <ChatModal
           isOpen={!!activeChatReservationId}
-          onClose={() => setActiveChatReservationId(null)}
+          onClose={() => {
+            const sharedReservations = getStoredReservations();
+            const completedInThisChat = sharedReservations.some((reservation) => reservation.id === activeChatReservationId && reservation.status === "COMPLETADA");
+            setReservations((previous) => previous.map((item) => {
+              const shared = sharedReservations.find((reservation) => reservation.id === item.id);
+              if (item.id === activeChatReservationId && shared?.status === "COMPLETADA") return { ...item, status: "closed" };
+              return item;
+            }));
+            if (completedInThisChat) setCompradorSubTab("historial");
+            setActiveChatReservationId(null);
+          }}
           reservationId={activeChatReservationId}
           currentUser={user}
           onOpenRatingModal={(resId) => setRatingResId(resId)}

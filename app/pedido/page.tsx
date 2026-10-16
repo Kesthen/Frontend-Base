@@ -1,13 +1,14 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Banknote, CheckCircle2, Clock3, KeyRound, Minus, Plus, ShieldAlert, ShoppingBag, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Home, Minus, Plus, ShieldAlert, ShoppingBag, Trash2 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import AnimatedKitchenBackground from "@/components/AnimatedKitchenBackground";
-import { addNotification, getStoredDishes, getStoredReservations, Reservation, saveDishes, saveReservations, UserProfile } from "@/lib/ollacercana-store";
+import OllaVerdeStamp from "@/components/OllaVerdeStamp";
+import { addNotification, getStoredDishes, getStoredReservations, Reservation, saveDishes, saveReservations, sharesResidentialComplex, UserProfile } from "@/lib/ollacercana-store";
 
 interface CartLine {
   id: number;
@@ -17,31 +18,16 @@ interface CartLine {
   image: string;
   quantity: number;
   dishId?: string;
+  residentialComplex?: string;
 }
 
 const CART_KEY = "ollacercana_menu_cart";
-
-function compressImage(file: File): Promise<string> {
-  return createImageBitmap(file).then((bitmap) => {
-    const scale = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const result = canvas.toDataURL("image/jpeg", 0.62);
-    if (Math.ceil((result.length * 3) / 4) > 350 * 1024) throw new Error("La imagen sigue siendo pesada. Adjunta una captura más pequeña.");
-    return result;
-  });
-}
 
 export default function PedidoPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [lines, setLines] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<Reservation["preferredPaymentMethod"]>("Nequi");
-  const [receipt, setReceipt] = useState("");
-  const [receiptName, setReceiptName] = useState("");
   const [pickupTime, setPickupTime] = useState("Lo antes posible (15-20 min)");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -59,7 +45,11 @@ export default function PedidoPage() {
         setUser(parsed);
         const saved = localStorage.getItem(CART_KEY);
         const parsedCart = saved ? JSON.parse(saved) as CartLine[] : [];
-        setLines(Array.isArray(parsedCart) ? parsedCart.filter((item) => item && item.quantity > 0) : []);
+        const availableDishes = getStoredDishes();
+        setLines(Array.isArray(parsedCart) ? parsedCart.filter((item) => item && item.quantity > 0).map((item) => ({
+          ...item,
+          residentialComplex: item.residentialComplex || availableDishes.find((dish) => dish.id === item.dishId || (dish.name === item.name && dish.cook === item.cook))?.residentialComplex,
+        })) : []);
       } catch {
         setError("No pudimos leer tu pedido guardado. Vuelve al Libretón y agrega tus platos otra vez.");
       }
@@ -83,46 +73,6 @@ export default function PedidoPage() {
     saveCart(next);
   };
 
-  const handleReceipt = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setError("");
-    if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-      setError("Adjunta una imagen o un archivo PDF.");
-      event.target.value = "";
-      return;
-    }
-    if (file.type === "application/pdf") {
-      if (file.size > 350 * 1024) {
-        setError("El PDF debe pesar menos de 350 KB.");
-        event.target.value = "";
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          setReceipt(reader.result);
-          setReceiptName(file.name);
-        }
-      };
-      reader.onerror = () => setError("No se pudo leer el comprobante. Intenta de nuevo.");
-      reader.readAsDataURL(file);
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      setError("La imagen original debe pesar menos de 8 MB.");
-      event.target.value = "";
-      return;
-    }
-    try {
-      setReceipt(await compressImage(file));
-      setReceiptName(file.name);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No se pudo procesar la imagen.");
-      event.target.value = "";
-    }
-  };
-
   const submitOrder = () => {
     if (!user || !lines.length || busy) return;
     setError("");
@@ -130,11 +80,6 @@ export default function PedidoPage() {
       setError("Verifica tu número de celular desde tu perfil antes de enviar la solicitud.");
       return;
     }
-    if (paymentMethod !== "Efectivo" && !receipt) {
-      setError("Adjunta el comprobante de pago para enviar la solicitud a las cocineras.");
-      return;
-    }
-
     const storedDishes = getStoredDishes();
     const dishMatches = lines.map((line) => ({
       line,
@@ -154,14 +99,15 @@ export default function PedidoPage() {
       dishImage: dish!.image,
       cookId: dish!.cookId,
       cookName: dish!.cook,
+      cookResidentialComplex: dish!.residentialComplex,
+      buyerResidentialComplex: user.residentialComplex,
+      isSameResidentialComplex: sharesResidentialComplex(user.residentialComplex, dish!.residentialComplex),
       buyerName: user.name || user.email,
       buyerEmail: user.email,
       portions: line.quantity,
       pricePerPortion: dish!.price,
       totalPrice: dish!.price * line.quantity,
       preferredPaymentMethod: paymentMethod,
-      paymentReceipt: receipt || undefined,
-      paymentReceiptName: receiptName || undefined,
       pickupTime,
       status: "PENDIENTE",
       createdAt: now.toISOString(),
@@ -187,7 +133,7 @@ export default function PedidoPage() {
       setLines([]);
       setSuccess(true);
     } catch {
-      setError("No se pudieron guardar las solicitudes. El almacenamiento del navegador puede estar lleno; prueba con un comprobante más liviano.");
+      setError("No se pudieron guardar las solicitudes. Inténtalo de nuevo.");
       setBusy(false);
     }
   };
@@ -208,7 +154,7 @@ export default function PedidoPage() {
           <section className="mx-auto max-w-xl rounded-3xl border border-[#bda078] bg-[#f4e8cf] p-7 text-center shadow-2xl sm:p-10">
             <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-emerald-700" />
             <h1 className="font-['Caveat',cursive] text-4xl font-bold">¡Solicitud enviada!</h1>
-            <p className="mt-2 text-sm text-[#6a5037]">Cada cocinera recibió la solicitud de sus platos. Te avisaremos cuando respondan.</p>
+            <p className="mt-2 text-sm text-[#6a5037]">Cada cocinera recibió la solicitud de sus platos. Espera su confirmación antes de transferir; después podrás adjuntar el comprobante en Mis pedidos.</p>
             <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
               <Link href="/cuenta/reservas" className="rounded-full bg-[#526f42] px-6 py-3 text-sm font-bold text-white">Ver mis pedidos</Link>
               <Link href="/menu" className="rounded-full border border-[#ad8a5e] px-6 py-3 text-sm font-bold text-[#573c27]">Volver al Libretón</Link>
@@ -245,6 +191,8 @@ export default function PedidoPage() {
                             <div className="min-w-0 flex-1">
                               <h3 className="truncate font-bold text-[#30251b]">{item.name}</h3>
                               <p className="text-xs text-[#796448]">{item.cook} · porción ${item.price.toLocaleString("es-CO")}</p>
+                              {sharesResidentialComplex(user?.residentialComplex, item.residentialComplex) && <span title={`Tú y ${item.cook} pertenecen a ${item.residentialComplex}`} className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-[#687a49] bg-[#edf0dc] px-2 py-0.5 text-[10px] font-extrabold text-[#43552e]"><Home className="h-3 w-3" /> Mismo conjunto</span>}
+                              <OllaVerdeStamp residentialComplex={item.residentialComplex} />
                               <p className="mt-1 font-bold text-[#a84029]">${(item.price * item.quantity).toLocaleString("es-CO")}</p>
                               <div className="mt-2 flex items-center gap-2">
                                 <button onClick={() => updateQuantity(item.id, -1)} aria-label={`Quitar una porción de ${item.name}`} className="rounded-full border border-[#ae9066] bg-white/70 p-1.5"><Minus className="h-3.5 w-3.5"/></button>
@@ -265,14 +213,12 @@ export default function PedidoPage() {
                       <p className="text-xs text-[#796448]">El pago se acuerda directamente con cada cocinera; OllaCercana no lo procesa.</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
-                      {(["Nequi", "Llaves", "Efectivo"] as const).map((method) => <button key={method} onClick={() => { setPaymentMethod(method); if (method === "Efectivo") { setReceipt(""); setReceiptName(""); } setError(""); }} aria-pressed={paymentMethod === method} className={`rounded-xl border px-2 py-3 text-sm font-bold ${paymentMethod === method ? "border-[#d66a25] bg-[#ec7928] text-white" : "border-[#c9b38f] bg-white/70 text-[#493323]"}`}>
-                        <span className="inline-flex items-center gap-1.5">{method === "Llaves" ? <KeyRound className="h-4 w-4"/> : method === "Efectivo" ? <Banknote className="h-4 w-4"/> : <span className="rounded bg-[#e6007e] px-1.5 text-white">n</span>}{method}</span>{method === "Llaves" && <span className="block text-[9px] opacity-75">Bre-B</span>}
+                      {(["Nequi", "Llaves", "Efectivo"] as const).map((method) => <button key={method} onClick={() => { setPaymentMethod(method); setError(""); }} aria-pressed={paymentMethod === method} className={`min-w-0 rounded-xl border px-2 py-2 text-sm font-bold ${paymentMethod === method ? "border-[#b94d2e] bg-[#fff0d7] text-[#432b1b] shadow-[0_0_0_2px_rgba(185,77,46,.18)]" : "border-[#c9b38f] bg-white/70 text-[#493323]"}`}>
+                        <span className={`mx-auto mb-1.5 flex aspect-[3/2] w-full max-w-[96px] items-center justify-center overflow-hidden rounded-lg ${method === "Llaves" ? "bg-[#32005f]" : "bg-white"}`}><Image src={method === "Nequi" ? "/images/nequi.jpg" : method === "Llaves" ? "/images/llaves.png" : "/images/efectivo.png"} alt={`Pago por ${method}`} width={96} height={64} className="h-full w-full object-contain" /></span>
+                        <span className="block">{method === "Llaves" ? "Llaves" : method}</span>{method === "Llaves" && <span className="block text-[9px] opacity-75">Bre-B</span>}
                       </button>)}
                     </div>
-                    {paymentMethod !== "Efectivo" && <div className="rounded-2xl border border-dashed border-[#c4a77d] bg-[#fff9ed] p-3">
-                      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#c4a77d] bg-white px-3 py-3 text-sm font-bold text-[#493323] hover:bg-[#f7eddb]"><Upload className="h-4 w-4 text-[#a84029]"/><span className="min-w-0 flex-1 truncate">{receiptName || "Adjuntar comprobante"}</span>{receipt && <CheckCircle2 className="h-4 w-4 text-emerald-700"/>}<input className="sr-only" type="file" accept="image/*,application/pdf" onChange={handleReceipt}/></label>
-                      <p className="mt-2 text-xs text-[#6b563b]">La cocinera revisará el comprobante junto con la solicitud.</p>
-                    </div>}
+                    <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">{paymentMethod === "Efectivo" ? "No pagas ahora: espera la confirmación y acuerda el efectivo al recoger." : "Espera a que cada cocinera confirme tu solicitud antes de transferir. Después podrás adjuntar el comprobante desde Mis pedidos."}</p>
                     <label className="block text-sm font-bold">Hora estimada de recogida<select value={pickupTime} onChange={(event) => setPickupTime(event.target.value)} className="mt-2 w-full rounded-xl border border-[#c9b38f] bg-white px-3 py-3 text-sm font-medium"><option>Lo antes posible (15-20 min)</option><option>12:30 PM</option><option>1:00 PM</option><option>1:30 PM</option><option>2:00 PM</option><option>Acordar por chat</option></select></label>
                   </section>
                 </div>
@@ -284,7 +230,7 @@ export default function PedidoPage() {
                       {lines.map((item) => <div key={item.id} className="flex justify-between gap-3"><span className="min-w-0 truncate">{item.quantity} × {item.name}</span><strong>${(item.quantity * item.price).toLocaleString("es-CO")}</strong></div>)}
                     </div>
                     <div className="flex justify-between py-4 text-lg font-extrabold text-[#9b3f22]"><span>Total estimado</span><span>${subtotal.toLocaleString("es-CO")}</span></div>
-                    <div className="mb-4 flex gap-2 rounded-xl bg-amber-100 p-3 text-xs leading-relaxed text-amber-950"><ShieldAlert className="h-4 w-4 shrink-0"/><span>OllaCercana no procesa pagos. El comprobante solo ayuda a la cocinera a revisar tu solicitud.</span></div>
+                    <div className="mb-4 flex gap-2 rounded-xl bg-amber-100 p-3 text-xs leading-relaxed text-amber-950"><ShieldAlert className="h-4 w-4 shrink-0"/><span>OllaCercana no procesa pagos. En pagos digitales, primero espera la confirmación de cada cocinera; luego podrás enviar el comprobante desde Mis pedidos.</span></div>
                     {error && <p role="alert" className="mb-3 rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-800">{error}</p>}
                     <button disabled={busy} onClick={submitOrder} className="w-full rounded-full bg-gradient-to-r from-[#e66c21] to-[#c8492a] px-4 py-4 text-sm font-extrabold text-white shadow-lg hover:brightness-110 disabled:opacity-60">{busy ? "Enviando…" : `Enviar ${Object.keys(groupedLines).length} solicitud${Object.keys(groupedLines).length === 1 ? "" : "es"}`}</button>
                     <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-[#796448]"><Clock3 className="h-3.5 w-3.5"/> Las cocineras deben confirmar cada solicitud.</p>

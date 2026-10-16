@@ -110,12 +110,12 @@ export default function SettingsPage() {
     void enableBrowserAlerts();
   };
 
-  const toggleClass = (checked: boolean) => `relative h-7 w-12 rounded-full transition-colors ${checked ? "bg-[#526f42]" : "bg-[#a8967d]"}`;
+  const toggleClass = (checked: boolean) => `relative h-8 w-14 rounded-full border-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a84029] ${checked ? "border-[#3e5b32] bg-[#526f42]" : "border-[#8d7a63] bg-[#c8b99f]"}`;
 
   return (
     <main data-theme-page className="relative min-h-screen overflow-hidden bg-[#17130f] px-4 py-6 font-['Outfit',sans-serif] text-[#f4efe6] sm:px-6 sm:py-10">
       <AnimatedKitchenBackground />
-      <div className="relative z-10 mx-auto w-full max-w-3xl space-y-6">
+      <div className="relative z-10 mx-auto w-full max-w-5xl space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <Link href="/menu" className="inline-flex items-center gap-2 rounded-full border border-[#b99770]/70 bg-[#fff7e9]/90 px-4 py-2 text-sm font-semibold text-[#493323] shadow transition hover:bg-white">
             <ArrowLeft className="h-4 w-4" /> Volver al Libretón
@@ -124,13 +124,13 @@ export default function SettingsPage() {
         </header>
 
         <section className="overflow-hidden rounded-[2rem] border-2 border-[#9b774f] bg-[#efe0c2] text-[#2b2117] shadow-[0_20px_60px_rgba(0,0,0,.4)]">
-          <div className="border-b border-[#bda078] bg-[#e8d1a3] px-6 py-6 sm:px-9">
+          <div className="border-b border-[#bda078] bg-[#e8d1a3] px-6 py-7 sm:px-10 sm:py-9">
             <p className="text-xs font-bold uppercase tracking-[.2em] text-[#80694d]">Tu espacio, a tu manera</p>
-            <h1 className="mt-1 font-['Caveat',cursive] text-4xl font-bold text-[#493323] sm:text-5xl">Ajustes</h1>
-            <p className="mt-1 max-w-xl text-sm text-[#5b4a38]">Personaliza la apariencia y la forma en que navegas por OllaCercana. Tus preferencias se guardan en este dispositivo.</p>
+            <h1 className="mt-5 font-['Caveat',cursive] text-5xl font-bold leading-[1.15] text-[#493323] sm:mt-6 sm:text-6xl">Ajustes</h1>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-[#5b4a38] sm:mt-5">Personaliza la apariencia y la forma en que navegas por OllaCercana. Tus preferencias se guardan en este dispositivo.</p>
           </div>
 
-          <div className="space-y-7 p-5 sm:p-9">
+          <div className="space-y-8 p-5 sm:p-10">
             <section aria-labelledby="appearance-title">
               <div className="mb-3 flex items-center gap-2">
                 {appearance === "light" ? <Sun className="h-5 w-5 text-[#a84029]" /> : <Moon className="h-5 w-5 text-[#526f42]" />}
@@ -185,8 +185,8 @@ export default function SettingsPage() {
 }
 
 function PreferenceToggle({ title, description, checked, onChange, toggleClass }: { title: string; description: string; checked: boolean; onChange: (value: boolean) => void; toggleClass: (checked: boolean) => string }) {
-  return <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#c4a77d] bg-[#f7eddb] p-4">
-    <div><h3 className="text-sm font-semibold text-[#2b2117]">{title}</h3><p className="mt-0.5 text-xs leading-relaxed text-[#6a5037]">{description}</p></div>
-    <button type="button" role="switch" aria-checked={checked} aria-label={title} onClick={() => onChange(!checked)} className={`${toggleClass(checked)} shrink-0`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} /></button>
+  return <div className="flex items-center justify-between gap-5 rounded-2xl border border-[#c4a77d] bg-[#f7eddb] p-5 sm:p-6">
+    <div className="max-w-3xl"><h3 className="text-base font-bold text-[#2b2117]">{title}</h3><p className="mt-1 text-sm leading-relaxed text-[#6a5037]">{description}</p></div>
+    <button type="button" role="switch" aria-checked={checked} aria-label={`${title}: ${checked ? "activado" : "desactivado"}`} onClick={() => onChange(!checked)} className={`${toggleClass(checked)} shrink-0`}><span className={`absolute left-0 top-1 h-5 w-5 rounded-full border border-black/10 bg-white shadow-md transition-transform ${checked ? "translate-x-7" : "translate-x-1"}`} /></button>
   </div>;
 }
