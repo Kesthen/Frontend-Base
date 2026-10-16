@@ -304,9 +304,11 @@ El manual de marca está en [`public/ManualDeIdentidad.html`](public/ManualDeIde
 
 ## Equipo
 
-<!-- Completa con los integrantes, curso y periodo académico -->
-- Integrante 1 — rol
-- Integrante 2 — rol
+Daniel Camilo Mosquera Martínez
+Juan Manuel Garzón Viracacha
+Kevin Andrey Ángel Acevedo
+Julián Felipe Morales Zambrano
+Santiago Andrés García Almario
 
 ---
 
