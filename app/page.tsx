@@ -5,6 +5,7 @@ import HeroSection from "@/components/HeroSection";
 import ScrollCanvasBackground from "@/components/ScrollCanvasBackground";
 import Link from "next/link";
 import { ChefHat, HeartHandshake, House, MapPin, MessageCircle, UtensilsCrossed } from "lucide-react";
+import EndingSection from "@/components/EndingSection";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -117,67 +118,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Bottom Contact/Envelope Section */}
-      <section className="relative z-20 bg-[#3a3528] px-4 pb-16 sm:px-8">
-        {/* Torn edge transition down to dark section */}
-        <div className="absolute top-0 left-0 w-full h-8 -translate-y-[90%] z-30" style={{ clipPath: 'polygon(0% 100%, 5% 20%, 10% 100%, 15% 10%, 20% 90%, 25% 0%, 30% 100%, 35% 20%, 40% 90%, 45% 10%, 50% 80%, 55% 0%, 60% 100%, 65% 10%, 70% 90%, 75% 20%, 80% 100%, 85% 0%, 90% 90%, 95% 10%, 100% 100%)', backgroundColor: '#3a3528' }}></div>
-        
-        <div className="mx-auto max-w-4xl pt-12">
-          <p className="text-center font-['Courier_New',monospace] text-[#d8cca6] mb-8 tracking-widest text-sm opacity-80">
-            Te invitamos a descubrir nuestro propósito, proceso y tu beneficio.
-          </p>
-          
-          {/* Envelope Card */}
-          <div className="bg-[#dfcc99] p-6 sm:p-8 shadow-[0_20px_40px_rgba(0,0,0,0.6)] border border-[#a38c64] rounded-sm flex flex-col md:flex-row gap-6 md:gap-10 relative">
-            
-            {/* Form side */}
-            <div className="flex-1 space-y-4">
-              <div className="flex gap-4">
-                <input type="text" placeholder="Your Name" className="w-1/2 bg-[#d6c48f] border border-[#a38c64] p-3 font-['Courier_New',monospace] text-[#4a3b2c] placeholder:text-[#8a7b63] focus:outline-none focus:bg-[#e3d1a0]" />
-                <input type="text" placeholder="Your Email" className="w-1/2 bg-[#d6c48f] border border-[#a38c64] p-3 font-['Courier_New',monospace] text-[#4a3b2c] placeholder:text-[#8a7b63] focus:outline-none focus:bg-[#e3d1a0]" />
-              </div>
-              <textarea placeholder="Your Message" rows={4} className="w-full bg-[#d6c48f] border border-[#a38c64] p-3 font-['Courier_New',monospace] text-[#4a3b2c] placeholder:text-[#8a7b63] focus:outline-none focus:bg-[#e3d1a0] resize-none"></textarea>
-              <div className="text-right">
-                <button className="bg-[#bda173] border-2 border-[#735e45] px-8 py-1.5 font-['Courier_New',monospace] font-bold text-[#4a3b2c] shadow-[2px_2px_0px_#4a3b2c] hover:translate-y-[2px] hover:shadow-none transition-all text-lg">
-                  Send
-                </button>
-              </div>
-            </div>
-
-            {/* Address side */}
-            <div className="w-full md:w-[40%] border-t md:border-t-0 md:border-l border-dashed border-[#a38c64] pt-6 md:pt-0 pl-0 md:pl-8 space-y-5 font-['Courier_New',monospace] text-[#4a3b2c] text-sm relative">
-              {/* Stamp */}
-              <div className="absolute -top-4 right-0 w-20 h-24 border-2 border-white p-1 rotate-12 bg-[#3a3528] shadow-md flex flex-col items-center justify-center text-center overflow-hidden">
-                <span className="text-[8px] text-white absolute top-1 uppercase tracking-tighter">Special Delivery</span>
-                <UtensilsCrossed className="w-10 h-10 text-white opacity-80 mt-2" />
-                <span className="text-white text-xs font-bold absolute bottom-1 left-1">30¢</span>
-              </div>
-
-              <div>
-                <strong className="text-lg font-bold text-[#634931]">Send To:</strong><br/><br/>
-                <span className="font-bold">OllaCercana Inc.</span><br/>
-                1009 8th Street,<br/>
-                Suite 102<br/>
-                P.O. Box 761<br/>
-                Bogotá, COL 110111
-              </div>
-              
-              <div className="pt-5 border-t border-[#a38c64] border-dashed">
-                <strong className="text-lg font-bold text-[#634931]">Phone & Email:</strong><br/><br/>
-                <span className="font-bold">1(877)OLLACERCA</span><br/>
-                <span className="font-bold">1(877)589-2267</span><br/>
-                <span className="opacity-80">info@ollacercana.com</span>
-              </div>
-            </div>
-            
-          </div>
-
-          <div className="text-center mt-10 font-['Courier_New',monospace] text-xs text-[#a3977c] tracking-widest uppercase">
-            Copyright 2026 OllaCercana. All rights reserved.
-          </div>
-        </div>
-      </section>
+      <EndingSection />
     </main>
   );
 }
