@@ -52,6 +52,8 @@ import {
   X,
   ZoomIn,
   Settings,
+  Menu,
+  Wallet,
 } from "lucide-react";
 
 interface CartItem {
@@ -80,6 +82,7 @@ export default function MenuPage() {
   const [withinTwoKm, setWithinTwoKm] = useState(true);
   const [selectedDietaryTag, setSelectedDietaryTag] = useState<string>("Todos");
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [storedDishesList, setStoredDishesList] = useState<DishItem[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
@@ -581,6 +584,21 @@ export default function MenuPage() {
             </div>
           </div>}
 
+          {/* OC-250: métodos de pago aceptados, visibles antes de reservar */}
+          {dish && !compact && (
+            <div className="mt-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-1">
+                {["Efectivo", "Nequi", "Llaves"].map((method) => (
+                  <span key={method} className="inline-flex items-center gap-1 rounded-full border border-[#aa8b5e] bg-[#f7eddb] px-2 py-0.5 text-[9px] font-bold text-[#5b4a38]">
+                    <Wallet className="h-2.5 w-2.5 text-[#80694d]" />
+                    {method}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[9px] leading-tight text-[#80694d]">El dinero se entrega directamente a la cocinera en efectivo o transferencia acordada.</p>
+            </div>
+          )}
+
           <div className="mt-auto flex items-end justify-between gap-2 border-t border-dashed border-[#aa8b5e] pt-1.5">
             {dish ? (
               <button onClick={() => openReservation(dish)} aria-label={`Reservar ${dish.name} por ${price} por porción`} title="Consultar disponibilidad y reservar" className={`font-['Caveat',cursive] font-bold leading-none text-[#5b3020] underline decoration-[#5b3020] decoration-1 underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C84B31] ${compact ? "text-[22px]" : "text-[25px]"}`}>
@@ -709,6 +727,19 @@ export default function MenuPage() {
             </Link>
           </nav>
 
+          {/* Mobile/Tablet hamburger toggle (OC-176): shown below xl, replaces the hidden nav links above */}
+          <button
+            type="button"
+            aria-haspopup="true"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="menu-mobile-nav"
+            aria-label="Abrir menú de navegación"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#b99770]/60 bg-[#fff7e9]/75 px-3 text-xs font-bold text-[#453321] transition-colors hover:bg-[#fff6e8] xl:hidden"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+
           {/* Right User Actions */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <Link href="/cuenta/ajustes" aria-label="Abrir ajustes" title="Ajustes" className="flex h-8 w-8 items-center justify-center rounded-full border border-[#b99770]/60 bg-[#fff7e9]/75 text-[#493323] transition-colors hover:bg-[#fff6e8] sm:h-9 sm:w-9">
@@ -746,6 +777,47 @@ export default function MenuPage() {
             </Link>
           </div>
         </div>
+
+        {/* Mobile/Tablet nav panel (OC-176) */}
+        {mobileMenuOpen && (
+          <nav
+            id="menu-mobile-nav"
+            className="mx-auto mt-3 grid w-full max-w-[1400px] grid-cols-2 gap-2 border-t border-[#a67b50]/40 pt-3 text-xs font-bold text-[#453321] xl:hidden"
+          >
+            <a
+              href="#explorar"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[#fff7e9]/80 border border-[#b99770]/50 px-3"
+            >
+              <Compass className="h-4 w-4 text-[#C84B31]" />
+              <span>Explorar</span>
+            </a>
+            <Link
+              href="/cocineras-cercanas"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[#fff7e9]/80 border border-[#b99770]/50 px-3"
+            >
+              <CookingPot className="h-4 w-4 text-[#C84B31]" />
+              <span>Cocinas cercanas</span>
+            </Link>
+            <Link
+              href="/cocineras"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[#fff7e9]/80 border border-[#b99770]/50 px-3"
+            >
+              <Users className="h-4 w-4 text-[#C84B31]" />
+              <span>Nuestras cocineras</span>
+            </Link>
+            <Link
+              href="/cuenta/reservas"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[#fff7e9]/80 border border-[#b99770]/50 px-3"
+            >
+              <ClipboardList className="h-4 w-4 text-[#C84B31]" />
+              <span>Mis pedidos</span>
+            </Link>
+          </nav>
+        )}
       </header>
 
       {/* ── MAIN CONTENT CONTAINER WITH Subtle Brick/Paper Wall Background ── */}
@@ -1416,7 +1488,7 @@ export default function MenuPage() {
                   alt="Sello Olla Verde: distintivo del conjunto, meta compartida con vigencia de siete días"
                   fill
                   sizes="(max-width: 768px) 82vw, 290px"
-                  className="object-cover object-center drop-shadow-[0_12px_12px_rgba(20,13,8,.4)]"
+                  className="object-contain object-center drop-shadow-[0_12px_12px_rgba(20,13,8,.4)]"
                 />
               </div>
               <figcaption className="mt-3 rounded-lg border border-[#fff0d1]/25 bg-[#24180f]/65 px-3 py-2 text-center text-xs leading-relaxed text-[#fff4dc] backdrop-blur-sm">
@@ -1454,14 +1526,33 @@ export default function MenuPage() {
           </ol>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-[#9b774f] bg-[#e8d1a3] px-5 py-4 shadow-[0_5px_14px_rgba(46,27,13,.14)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#c88359]/60 bg-[#f3ddc2] text-[#a84029]"><Heart className="h-5 w-5" /></span>
-            <div><span className="text-[10px] font-bold uppercase tracking-wider text-[#a84029]">Un guiño a quienes vuelven</span><p className="font-['Caveat',cursive] text-2xl font-bold leading-none">Vecino Fiel</p><p className="mt-1 text-xs text-[#5b4a38]">Completa tres entregas en un mes con la misma cocinera y gana la insignia.</p></div>
-          </div>
-          <Link href="/cuenta/registro" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[#75865a]/70 bg-[#dce4ce] px-5 py-3 text-xs font-bold text-[#42542e] transition hover:bg-[#cdd9b9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#493323]">
-            ¿Cocinas para tu barrio? <ChevronDown className="h-4 w-4 -rotate-90" />
+        <div className="flex flex-col gap-4 rounded-2xl border-2 border-[#9b774f] bg-[#e8d1a3] px-5 py-5 shadow-[0_8px_20px_rgba(46,27,13,.18)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Link href="/vecino-fiel" className="group flex items-center gap-4 transition-transform hover:scale-[1.01]">
+            <span className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-full border-2 border-[#c88359] bg-[#f3ddc2] text-[#a84029] shadow-sm group-hover:bg-[#ebd0b0]">
+              <Heart className="h-6 w-6 text-[#c05621] fill-[#c05621]/20 group-hover:scale-110 transition-transform" />
+              <span className="absolute -bottom-1 -right-1 bg-[#2b2117] text-amber-200 text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-amber-600">3/3</span>
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#a84029]">Insignia y Reto HU-21</span>
+                <span className="rounded bg-[#2b2117] px-1.5 py-0.5 text-[9px] font-bold text-amber-200 uppercase">Ver expediente</span>
+              </div>
+              <p className="font-['Caveat',cursive] text-2xl font-bold leading-none text-[#2b2117] group-hover:text-[#a84029] transition-colors">
+                Vecino Fiel · Reconocimiento del Barrio
+              </p>
+              <p className="mt-1 text-xs text-[#5b4a38]">
+                Completa 3 entregas en un mes con la misma cocinera y gana la insignia oficial con <strong className="text-[#a84029]">5% de descuento</strong> en tu siguiente pedido. <span className="font-bold underline decoration-[#a84029] ml-1">Consulta tu racha aquí →</span>
+              </p>
+            </div>
           </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/vecino-fiel" className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#a84029] bg-[#a84029] px-4 py-2.5 text-xs font-bold text-amber-50 shadow-sm transition hover:bg-[#8e3521]">
+              Ver mi Pasaporte
+            </Link>
+            <Link href="/cuenta/registro" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[#75865a]/70 bg-[#dce4ce] px-4 py-2.5 text-xs font-bold text-[#42542e] transition hover:bg-[#cdd9b9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#493323]">
+              ¿Cocinas para tu barrio? <ChevronDown className="h-4 w-4 -rotate-90" />
+            </Link>
+          </div>
         </div>
       </section>
       {storyboardOpen && (

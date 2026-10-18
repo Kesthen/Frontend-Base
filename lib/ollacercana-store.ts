@@ -198,6 +198,9 @@ export interface Reservation {
   buyerEmail: string;
   portions: number;
   pricePerPortion: number;
+  originalPrice?: number;
+  discountPercent?: number;
+  discountAmount?: number;
   totalPrice: number;
   preferredPaymentMethod: "Efectivo" | "Nequi" | "Daviplata" | "Llaves";
   paymentReceipt?: string;
@@ -540,6 +543,29 @@ export const saveMessages = (reservationId: string, msgs: ChatMessage[]) => {
   localStorage.setItem(`ollacercana_chat_${reservationId}`, JSON.stringify(msgs));
 };
 
+// OC-243: ¿tiene esta conversación un mensaje pendiente de leer para el usuario actual?
+// Se apoya en el puntero "último leído" (ollacercana_chat_read_{reservationId}_{email})
+// que ChatModal ya guarda al abrir el chat.
+export const hasPendingChatMessage = (
+  reservationId: string,
+  viewer: { email: string; name?: string; commercialName?: string }
+): boolean => {
+  if (typeof window === "undefined") return false;
+  const history = getStoredMessages(reservationId);
+  if (history.length === 0) return false;
+
+  const lastMsg = history[history.length - 1];
+  const viewerName = viewer.name || viewer.commercialName || viewer.email;
+  const sentByViewer =
+    lastMsg.sender === viewerName ||
+    lastMsg.sender === viewer.commercialName ||
+    lastMsg.sender === viewer.email;
+  if (sentByViewer || lastMsg.sender === "Sistema OllaCercana") return false;
+
+  const lastReadId = localStorage.getItem(`ollacercana_chat_read_${reservationId}_${viewer.email}`);
+  return lastReadId !== lastMsg.id;
+};
+
 const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: "notif-1",
@@ -610,3 +636,217 @@ export const addNotification = (title: string, message: string, targetEmail: str
     }
   }
 };
+
+// ============================================================================
+// HU-21: Participación en Retos Comunitarios e Insignias de Fidelidad (Vecino Fiel)
+// Escenario 1: 3 reservas completadas en un mismo mes con la misma cocinera -> otorga insignia "Vecino Fiel"
+// Escenario 3: Pasa un mes sin pedir a la misma cocinera -> contador de racha se reinicia
+// ============================================================================
+
+export interface VecinoFielCookStreak {
+  cookId: string;
+  cookName: string;
+  cookAvatar?: string;
+  cookResidentialComplex?: string;
+  currentMonthOrders: number;
+  isUnlocked: boolean; // >= 3 in current month
+  completedDeliveries: Reservation[];
+  lastOrderDate?: string;
+  streakStatus: "ACTIVA" | "EN_PROGRESO" | "REINICIADA";
+}
+
+export interface VecinoFielSummary {
+  isVecinoFiel: boolean;
+  unlockedCooks: VecinoFielCookStreak[];
+  inProgressCooks: VecinoFielCookStreak[];
+  topCook?: VecinoFielCookStreak;
+  totalCompletedThisMonth: number;
+  allCookStreaks: VecinoFielCookStreak[];
+}
+
+export const getMonthKey = (dateStrOrObj?: string | Date): string => {
+  const d = dateStrOrObj ? new Date(dateStrOrObj) : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+};
+
+export const getVecinoFielStatus = (buyerEmail?: string): VecinoFielSummary => {
+  if (typeof window === "undefined") {
+    return {
+      isVecinoFiel: false,
+      unlockedCooks: [],
+      inProgressCooks: [],
+      totalCompletedThisMonth: 0,
+      allCookStreaks: [],
+    };
+  }
+
+  const allReservations = getStoredReservations();
+  const currentMonthKey = getMonthKey(new Date());
+
+  // Determine buyer email: either passed or from logged in user or first reservation
+  let targetEmail = buyerEmail?.trim().toLowerCase();
+  if (!targetEmail) {
+    try {
+      const userJson = localStorage.getItem("ollacercana_user");
+      if (userJson) {
+        const u = JSON.parse(userJson);
+        targetEmail = u.email?.trim().toLowerCase();
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // Filter completed reservations for this buyer (or all completed if no specific email is found in demo)
+  const buyerCompleted = allReservations.filter((r) => {
+    if (r.status !== "COMPLETADA") return false;
+    if (!targetEmail) return true;
+    return r.buyerEmail?.trim().toLowerCase() === targetEmail;
+  });
+
+  // Group by cookId
+  const byCook = new Map<string, Reservation[]>();
+  buyerCompleted.forEach((res) => {
+    const list = byCook.get(res.cookId) || [];
+    list.push(res);
+    byCook.set(res.cookId, list);
+  });
+
+  // Also include popular default cooks from demo dishes if not yet ordered
+  const dishes = getStoredDishes();
+  dishes.forEach((d) => {
+    if (!byCook.has(d.cookId)) {
+      byCook.set(d.cookId, []);
+    }
+  });
+
+  const allCookStreaks: VecinoFielCookStreak[] = [];
+
+  byCook.forEach((resList, cookId) => {
+    const cookDish = dishes.find((d) => d.cookId === cookId);
+    const cookName = resList[0]?.cookName || cookDish?.cook || `Cocinera ${cookId}`;
+    const cookAvatar = resList[0]?.cookAvatar || cookDish?.cookAvatar || "/images/abuelita_3d_hq.jpg";
+    const cookComplex = resList[0]?.cookResidentialComplex || cookDish?.residentialComplex || "Conjunto OllaCercana";
+
+    // Orders in current calendar month
+    const thisMonthOrders = resList.filter((r) => {
+      const dateKey = getMonthKey(r.completedAt || r.createdAt);
+      return dateKey === currentMonthKey;
+    });
+
+    // Orders in older months
+    const olderOrders = resList.filter((r) => {
+      const dateKey = getMonthKey(r.completedAt || r.createdAt);
+      return dateKey !== currentMonthKey;
+    });
+
+    const currentCount = thisMonthOrders.length;
+    const isUnlocked = currentCount >= 3;
+
+    // Determine status (HU-21 Escenario 3: si pasa un mes sin pedir, racha se reinicia)
+    let streakStatus: "ACTIVA" | "EN_PROGRESO" | "REINICIADA" = "EN_PROGRESO";
+    if (isUnlocked) {
+      streakStatus = "ACTIVA";
+    } else if (currentCount === 0 && olderOrders.length > 0) {
+      streakStatus = "REINICIADA";
+    }
+
+    const lastOrder = [...resList].sort((a, b) => new Date(b.completedAt || b.createdAt).getTime() - new Date(a.completedAt || a.createdAt).getTime())[0];
+
+    allCookStreaks.push({
+      cookId,
+      cookName,
+      cookAvatar,
+      cookResidentialComplex: cookComplex,
+      currentMonthOrders: currentCount,
+      isUnlocked,
+      completedDeliveries: thisMonthOrders,
+      lastOrderDate: lastOrder?.completedAt || lastOrder?.createdAt,
+      streakStatus,
+    });
+  });
+
+  // Sort: unlocked first, then highest current orders
+  allCookStreaks.sort((a, b) => {
+    if (a.isUnlocked && !b.isUnlocked) return -1;
+    if (!a.isUnlocked && b.isUnlocked) return 1;
+    return b.currentMonthOrders - a.currentMonthOrders;
+  });
+
+  const unlockedCooks = allCookStreaks.filter((c) => c.isUnlocked);
+  const inProgressCooks = allCookStreaks.filter((c) => !c.isUnlocked);
+  const totalCompletedThisMonth = buyerCompleted.filter((r) => getMonthKey(r.completedAt || r.createdAt) === currentMonthKey).length;
+
+  return {
+    isVecinoFiel: unlockedCooks.length > 0,
+    unlockedCooks,
+    inProgressCooks,
+    topCook: allCookStreaks[0],
+    totalCompletedThisMonth,
+    allCookStreaks,
+  };
+};
+
+export const syncVecinoFielAfterCompletion = (reservation: Reservation): void => {
+  if (typeof window === "undefined" || reservation.status !== "COMPLETADA") return;
+
+  const status = getVecinoFielStatus(reservation.buyerEmail);
+  const streakForCook = status.allCookStreaks.find((c) => c.cookId === reservation.cookId);
+
+  // If this order completed the 3rd delivery, grant badge to current user profile
+  try {
+    const userJson = localStorage.getItem("ollacercana_user");
+    if (userJson) {
+      const user: UserProfile = JSON.parse(userJson);
+      const isTargetUser = !reservation.buyerEmail || user.email.toLowerCase() === reservation.buyerEmail.toLowerCase();
+      if (isTargetUser) {
+        const badges = new Set(user.badges || []);
+        if (streakForCook && streakForCook.currentMonthOrders >= 3) {
+          badges.add("Vecino Fiel");
+          user.badges = Array.from(badges);
+          localStorage.setItem("ollacercana_user", JSON.stringify(user));
+
+          addNotification(
+            "🌟 ¡Insignia y 5% de Descuento: Vecino Fiel!",
+            `Has completado 3 entregas este mes con ${reservation.cookName}. Tu perfil ahora luce con orgullo el sello de Vecino Fiel y tienes un 5% de descuento en tu siguiente pedido de comida con ella.`,
+            user.email
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error updating Vecino Fiel badge:", err);
+  }
+
+  window.dispatchEvent(new CustomEvent("vecinofiel-updated", { detail: { cookId: reservation.cookId } }));
+};
+
+export const getVecinoFielDiscountForCook = (
+  cookIdOrName: string,
+  buyerEmail?: string
+): { hasDiscount: boolean; discountPercent: number; reason: string } => {
+  if (typeof window === "undefined") return { hasDiscount: false, discountPercent: 0, reason: "" };
+
+  const status = getVecinoFielStatus(buyerEmail);
+  const normalizedTarget = cookIdOrName.toLowerCase().replace(/\s+/g, "-");
+
+  const cookStreak = status.unlockedCooks.find(
+    (c) =>
+      c.cookId === cookIdOrName ||
+      c.cookId === normalizedTarget ||
+      c.cookName.toLowerCase() === cookIdOrName.toLowerCase()
+  );
+
+  if (cookStreak && cookStreak.isUnlocked) {
+    return {
+      hasDiscount: true,
+      discountPercent: 5,
+      reason: `Beneficio Vecino Fiel: 5% de descuento con ${cookStreak.cookName}`,
+    };
+  }
+
+  return { hasDiscount: false, discountPercent: 0, reason: "" };
+};
+

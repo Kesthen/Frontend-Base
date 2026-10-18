@@ -7,6 +7,7 @@ import Image from "next/image";
 import BrandLogo from "@/components/BrandLogo";
 import AnimatedKitchenBackground from "@/components/AnimatedKitchenBackground";
 import { DishItem, getStoredDishes } from "@/lib/ollacercana-store";
+import OllaVerdeStamp from "@/components/OllaVerdeStamp";
 import { ArrowLeft, ChefHat, Heart, MapPin, Star, Utensils } from "lucide-react";
 
 export default function CocineraProfilePage() {
@@ -68,6 +69,9 @@ export default function CocineraProfilePage() {
                       <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[#6b5942]"><MapPin className="h-5 w-5 shrink-0 text-[#526f42]"/><span className="min-w-0"><strong className="block text-[10px] uppercase tracking-wider text-[#927654]">Su conjunto</strong><span className="block truncate font-semibold">{cook.residentialComplex}</span></span></div>
                       <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[#6b5942]"><Star className="h-5 w-5 shrink-0 fill-amber-500 text-amber-600"/><span><strong className="block text-[10px] uppercase tracking-wider text-[#927654]">Reputación vecinal</strong><span className="font-semibold">{cook.rating} · {cook.reviews} opiniones</span></span></div>
                       <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[#6b5942]"><Utensils className="h-5 w-5 shrink-0 text-[#a84029]"/><span><strong className="block text-[10px] uppercase tracking-wider text-[#927654]">En su recetario</strong><span className="font-semibold">{dishes.length} {dishes.length === 1 ? "plato" : "platos"} publicados</span></span></div>
+                    </div>
+                    <div className="mt-4 flex justify-center">
+                      <OllaVerdeStamp residentialComplex={cook.residentialComplex} />
                     </div>
                   </aside>
 

@@ -20,6 +20,8 @@ import {
   saveReservations,
   sharesResidentialComplex,
   syncOllaVerdeProgressAfterCompletion,
+  syncVecinoFielAfterCompletion,
+  hasPendingChatMessage,
   DishItem,
 } from "@/lib/ollacercana-store";
 import {
@@ -127,6 +129,35 @@ export default function CocinaPage() {
   const [activeChatReservationId, setActiveChatReservationId] = useState<string | null>(null);
   const [dishesList, setDishesList] = useState<DishItem[]>([]);
   const [dishAvailabilityError, setDishAvailabilityError] = useState<string | null>(null);
+
+  // HU-24 / OC-113: detectar conflicto de versión (409) al ajustar disponibilidad.
+  // Como la app corre sobre localStorage, el "backend" es el store compartido: si otra
+  // pestaña/sesión (p. ej. una reserva) modificó el plato desde que esta vista lo cargó,
+  // se simula la respuesta 409 del backend en vez de sobrescribir datos obsoletos.
+  const applyDishAvailabilityUpdate = (
+    staleDish: DishItem,
+    mutate: (liveDish: DishItem) => DishItem
+  ) => {
+    setDishAvailabilityError(null);
+    const liveDishes = getStoredDishes();
+    const liveDish = liveDishes.find((item) => item.id === staleDish.id);
+
+    if (
+      !liveDish ||
+      liveDish.availablePortions !== staleDish.availablePortions ||
+      liveDish.totalPortions !== staleDish.totalPortions ||
+      liveDish.reservedPortions !== staleDish.reservedPortions ||
+      liveDish.status !== staleDish.status
+    ) {
+      setDishAvailabilityError("El plato fue modificado por otra reserva, refresca los datos.");
+      setDishesList(liveDishes);
+      return;
+    }
+
+    const updated = liveDishes.map((item) => (item.id === liveDish.id ? mutate(liveDish) : item));
+    setDishesList(updated);
+    saveDishes(updated);
+  };
 
   const [rejectingResId, setRejectingResId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("Sin porciones disponibles");
@@ -354,7 +385,10 @@ export default function CocinaPage() {
     });
     saveReservations(savedReservations);
     const completedReservation = savedReservations.find((reservation) => reservation.id === resId && reservation.status === "COMPLETADA");
-    if (completedReservation) syncOllaVerdeProgressAfterCompletion(completedReservation);
+    if (completedReservation) {
+      syncOllaVerdeProgressAfterCompletion(completedReservation);
+      syncVecinoFielAfterCompletion(completedReservation);
+    }
   };
 
   const handleSimulateCompradorConfirm = (resId: string) => {
@@ -378,7 +412,10 @@ export default function CocinaPage() {
       : reservation);
     saveReservations(savedReservations);
     const completedReservation = savedReservations.find((reservation) => reservation.id === resId && reservation.status === "COMPLETADA");
-    if (completedReservation) syncOllaVerdeProgressAfterCompletion(completedReservation);
+    if (completedReservation) {
+      syncOllaVerdeProgressAfterCompletion(completedReservation);
+      syncVecinoFielAfterCompletion(completedReservation);
+    }
   };
 
   if (checkingSession || !user) {
@@ -530,17 +567,12 @@ export default function CocinaPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        setDishAvailabilityError(null);
-                        const updated = dishesList.map((item) => {
-                          if (item.id === d.id) {
-                            const newTotal = item.totalPortions + 1;
-                            const newAvail = item.availablePortions + 1;
-                            return { ...item, totalPortions: newTotal, availablePortions: newAvail, status: "DISPONIBLE" as const };
-                          }
-                          return item;
-                        });
-                        setDishesList(updated);
-                        saveDishes(updated);
+                        applyDishAvailabilityUpdate(d, (live) => ({
+                          ...live,
+                          totalPortions: live.totalPortions + 1,
+                          availablePortions: live.availablePortions + 1,
+                          status: "DISPONIBLE" as const,
+                        }));
                       }}
                       className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold flex items-center gap-1"
                       title="Aumentar disponibilidad"
@@ -559,19 +591,14 @@ export default function CocinaPage() {
                           return;
                         }
                         if (d.availablePortions <= 0) return;
-                        const updated = dishesList.map((item) => {
-                          if (item.id === d.id) {
-                            const newAvail = Math.max(0, item.availablePortions - 1);
-                            return {
-                              ...item,
-                              availablePortions: newAvail,
-                              status: (newAvail === 0 ? "AGOTADO" : "DISPONIBLE") as any,
-                            };
-                          }
-                          return item;
+                        applyDishAvailabilityUpdate(d, (live) => {
+                          const newAvail = Math.max(0, live.availablePortions - 1);
+                          return {
+                            ...live,
+                            availablePortions: newAvail,
+                            status: (newAvail === 0 ? "AGOTADO" : "DISPONIBLE") as any,
+                          };
                         });
-                        setDishesList(updated);
-                        saveDishes(updated);
                       }}
                       className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold flex items-center gap-1"
                       title="Disminuir disponibilidad"
@@ -582,15 +609,11 @@ export default function CocinaPage() {
 
                     <button
                       onClick={() => {
-                        setDishAvailabilityError(null);
-                        const updated = dishesList.map((item) => {
-                          if (item.id === d.id) {
-                            return { ...item, availablePortions: 0, status: "AGOTADO" as const };
-                          }
-                          return item;
-                        });
-                        setDishesList(updated);
-                        saveDishes(updated);
+                        applyDishAvailabilityUpdate(d, (live) => ({
+                          ...live,
+                          availablePortions: 0,
+                          status: "AGOTADO" as const,
+                        }));
                       }}
                       className="px-3 py-1.5 rounded-xl bg-rose-950 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-1"
                     >
@@ -671,8 +694,14 @@ export default function CocinaPage() {
                   <button
                     type="button"
                     onClick={() => setActiveChatReservationId(res.id)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#75865a]/70 bg-[#dce4ce] px-4 py-2.5 text-xs font-bold text-[#42542e] transition hover:bg-[#cdd9b9]"
+                    className="relative inline-flex items-center gap-2 rounded-xl border border-[#75865a]/70 bg-[#dce4ce] px-4 py-2.5 text-xs font-bold text-[#42542e] transition hover:bg-[#cdd9b9]"
                   >
+                    {user && hasPendingChatMessage(res.id, user) && (
+                      <span
+                        aria-label="Mensaje pendiente"
+                        className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[#f3f8ee] bg-[#e8542f]"
+                      />
+                    )}
                     <OllaChatMark className="h-6 w-7" />
                     {res.status === "closed" || res.status === "rejected" ? "Ver conversación" : "Chat con comprador"}
                   </button>

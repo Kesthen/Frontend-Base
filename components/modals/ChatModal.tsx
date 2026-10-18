@@ -10,6 +10,7 @@ import {
   saveMessages,
   saveReservations,
   syncOllaVerdeProgressAfterCompletion,
+  syncVecinoFielAfterCompletion,
   UserProfile,
 } from "@/lib/ollacercana-store";
 import { Clock, Lock, CheckCircle2, X, Send, UserRound } from "lucide-react";
@@ -146,7 +147,10 @@ export default function ChatModal({
     });
     saveReservations(updated);
     const completedReservation = updated.find((item) => item.id === reservation.id);
-    if (completedReservation) syncOllaVerdeProgressAfterCompletion(completedReservation);
+    if (completedReservation) {
+      syncOllaVerdeProgressAfterCompletion(completedReservation);
+      syncVecinoFielAfterCompletion(completedReservation);
+    }
     setReservation((prev) => (prev ? { ...prev, status: "COMPLETADA", completedAt } : null));
 
     // System message in chat
