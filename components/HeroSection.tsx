@@ -31,23 +31,25 @@ export default function HeroSection() {
   const titleOpacity = Math.max(0, Math.min(1, 1 - scrollProgress * 2.2));
   const titleScale = 1 + scrollProgress * 0.08;
 
-  // Glass pill buttons fade in ONLY at final kitchen table scene (~82% to 100% scroll)
-  const buttonsOpacity = scrollProgress < 0.82 
+  // Glass pill buttons fade in smoothly at kitchen table scene (~65% to 100% scroll)
+  const buttonsOpacity = scrollProgress < 0.65 
     ? 0 
-    : Math.max(0, Math.min(1, (scrollProgress - 0.82) * 5.5));
+    : Math.max(0, Math.min(1, (scrollProgress - 0.65) * 3.5));
 
-  // Quick fallback bar visible when title is visible or during middle scroll
-  const quickBarOpacity = scrollProgress > 0.85 ? 0.2 : 1;
+  const quickBarOpacity = 1;
 
   const handleScrollDownClick = () => {
+    const container = document.getElementById("kitchen-scroll");
+    if (!container) return;
+    const scrollableHeight = container.offsetHeight - window.innerHeight;
     window.scrollTo({
-      top: document.documentElement.scrollHeight,
+      top: container.offsetTop + scrollableHeight * 0.95,
       behavior: "smooth"
     });
   };
 
   return (
-    <section className="relative h-full w-full bg-transparent text-white flex flex-col items-center justify-between overflow-hidden select-none font-sans min-h-screen">
+    <section className="relative h-full w-full bg-transparent text-[#FAF3E7] flex flex-col items-center justify-between overflow-hidden select-none font-sans min-h-screen">
       
       {/* ========================================================================= */}
       {/* 1. STARTING TITLE LOCKUP (0% SCROLL - FADES OUT ON SCROLL) */}
@@ -60,31 +62,46 @@ export default function HeroSection() {
           visibility: titleOpacity === 0 ? "hidden" : "visible",
         }}
       >
-        <BrandLogo size="xl" showTagline={true} taglineColor="text-amber-100 drop-shadow-md" />
+        <BrandLogo size="xl" showTagline={true} taglineColor="text-[#FDF3D6] drop-shadow-md" />
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. SCROLL GUIDANCE & QUICK ACCESS BAR (FOR ELDERLY / NON-TECH USERS) */}
+      {/* 2. SCROLL GUIDANCE & QUICK ACCESS BAR */}
       {/* ========================================================================= */}
       <div 
         className="relative z-40 w-full max-w-4xl mx-auto px-4 pb-6 flex flex-col items-center gap-3 transition-opacity duration-300 pointer-events-auto"
         style={{ opacity: quickBarOpacity }}
       >
         {/* Scroll Hint (Desliza hacia abajo) */}
-        {scrollProgress < 0.3 && (
+        {scrollProgress < 0.25 && (
           <button 
             onClick={handleScrollDownClick}
-            className="group flex flex-col items-center gap-1.5 cursor-pointer text-amber-200/90 hover:text-white transition-all transform hover:scale-105"
-            aria-label="Deslizar hacia la cocina"
+            className="group flex flex-col items-center gap-1.5 cursor-pointer text-[#FAF3E7] hover:text-[#F4C430] transition-all transform hover:scale-105"
+            aria-label="Avanzar hasta los accesos al menú, al mapa y a las cocineras"
           >
-            <span className="font-['Caveat',cursive] text-lg sm:text-xl font-bold tracking-wide flex items-center gap-1.5 bg-[#1C1A17]/90 px-3.5 py-1 rounded-full border border-amber-500/30 shadow-md">
-              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-              Desliza para entrar a la cocina
+            <span className="font-['Caveat',cursive] text-lg sm:text-xl font-bold tracking-wide flex items-center gap-1.5 bg-[#2B2117]/90 px-3.5 py-1 rounded-full border border-[#F0822D]/50 shadow-md">
+              <Sparkles className="w-4 h-4 text-[#F4C430] animate-pulse" />
+              Explora la cocina y sus accesos
             </span>
-            <ChevronDown className="w-6 h-6 text-amber-400 animate-bounce" />
+            <span className="text-center text-[10px] font-bold tracking-wide text-[#FAF3E7]/90">
+              Desliza hacia abajo para recorrer la cocina de la abuelita
+            </span>
+            <ChevronDown className="w-6 h-6 text-[#F0822D] animate-bounce" />
           </button>
         )}
 
+        {scrollProgress >= 0.25 && scrollProgress < 0.65 && (
+          <p className="rounded-full border border-[#F0822D]/50 bg-[#2B2117]/90 px-4 py-2 text-center text-xs font-bold text-[#FAF3E7] shadow-md">
+            Sigue deslizando · Mapa, cocineras y menú en los objetos de la cocina
+          </p>
+        )}
+
+        {scrollProgress >= 0.65 && (
+          <p className="rounded-full border border-[#62B869]/60 bg-[#2B2117]/95 px-4 py-1.5 text-center text-xs font-bold text-[#62B869] shadow-lg flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#62B869] animate-ping" />
+            ¡Toca los elementos de la cocina para explorar!
+          </p>
+        )}
 
       </div>
 
@@ -101,74 +118,74 @@ export default function HeroSection() {
         <div className="relative w-full h-full inset-0">
           
           {/* =================================================================== */}
-          {/* BADGE 1: MAPA (VERDE - EN EL MARCO SUPERIOR DERECHO DE LA VENTANA) */}
+          {/* BADGE 1: MAPA (VERDE - EN LA VENTANA DERECHA DE LA COCINA) */}
           {/* =================================================================== */}
           <Link
             href="/cocineras-cercanas"
-            className="group absolute right-[5%] sm:right-[7%] lg:right-[9%] top-[14%] sm:top-[16%] lg:top-[18%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 z-30"
+            className="group absolute right-[4%] sm:right-[7%] lg:right-[9%] top-[16%] sm:top-[18%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 z-30"
           >
             {/* Pulsing ring indicator */}
             <div className="relative">
-              <span className="absolute -inset-1 rounded-full bg-lime-500/40 blur-sm animate-pulse group-hover:bg-lime-400/60" />
-              <div className="relative bg-[#1C1A17]/95 border-2 border-lime-500/80 px-4 py-2 rounded-full flex items-center gap-2.5 shadow-[0_8px_25px_rgba(0,0,0,0.85)] group-hover:border-lime-300 group-hover:bg-[#2A2620]">
-                <MapPin className="w-5 h-5 text-lime-400 shrink-0 animate-bounce" />
+              <span className="absolute -inset-1 rounded-full bg-[#62B869]/50 blur-sm animate-pulse group-hover:bg-[#62B869]/80" />
+              <div className="relative bg-[#2B2117]/95 border-2 border-[#62B869] px-4 py-2 rounded-full flex items-center gap-2.5 shadow-[0_8px_25px_rgba(43,33,23,0.85)] group-hover:bg-[#5B4A38]">
+                <MapPin className="w-5 h-5 text-[#62B869] shrink-0 animate-bounce" />
                 <div className="flex flex-col text-left leading-none">
-                  <span className="font-['Caveat',cursive] text-xl font-bold text-lime-200 tracking-wide">Mapa</span>
-                  <span className="text-[10px] font-sans text-lime-300/90 font-bold uppercase tracking-wider">¡Comida cerca de ti!</span>
+                  <span className="font-['Caveat',cursive] text-xl font-bold text-[#FAF3E7] tracking-wide">Mapa</span>
+                  <span className="text-[10px] font-sans text-[#62B869] font-bold uppercase tracking-wider">¡Comida cerca de ti!</span>
                 </div>
               </div>
             </div>
             {/* Hand Pointer */}
-            <div className="mt-1.5 flex items-center gap-1 bg-black/90 px-2.5 py-0.5 rounded-full border border-lime-500/50 shadow-md">
-              <span className="text-[10px] font-bold text-lime-300 font-sans">Toca para ver el mapa</span>
+            <div className="mt-1.5 flex items-center gap-1 bg-[#2B2117]/95 px-2.5 py-0.5 rounded-full border border-[#62B869]/70 shadow-md">
+              <span className="text-[10px] font-bold text-[#FAF3E7] font-sans">Toca para abrir el mapa del barrio</span>
             </div>
           </Link>
 
           {/* =================================================================== */}
-          {/* BADGE 2: COCINERAS (AMARILLO - SOBRE EL GABINETE SUPERIOR DERECHO) */}
+          {/* BADGE 2: COCINERAS (AMARILLO - EN EL GABINETE / ESTANTERÍA DE OLLAS) */}
           {/* =================================================================== */}
           <Link
             href="/cocineras-cercanas"
-            className="group absolute left-[47%] sm:left-[50%] lg:left-[52%] top-[20%] sm:top-[22%] lg:top-[24%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 z-30"
+            className="group absolute left-[30%] sm:left-[35%] lg:left-[38%] top-[18%] sm:top-[20%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 z-30"
           >
             {/* Pulsing ring indicator */}
             <div className="relative">
-              <span className="absolute -inset-1 rounded-full bg-amber-500/40 blur-sm animate-pulse group-hover:bg-amber-400/60" />
-              <div className="relative bg-[#1C1A17]/95 border-2 border-amber-500/80 px-4 py-2 rounded-full flex items-center gap-2.5 shadow-[0_8px_25px_rgba(0,0,0,0.85)] group-hover:border-amber-300 group-hover:bg-[#2A2620]">
-                <ChefHat className="w-5 h-5 text-amber-400 shrink-0 animate-bounce" />
+              <span className="absolute -inset-1 rounded-full bg-[#F4C430]/50 blur-sm animate-pulse group-hover:bg-[#F4C430]/80" />
+              <div className="relative bg-[#2B2117]/95 border-2 border-[#F4C430] px-4 py-2 rounded-full flex items-center gap-2.5 shadow-[0_8px_25px_rgba(43,33,23,0.85)] group-hover:bg-[#5B4A38]">
+                <ChefHat className="w-5 h-5 text-[#F4C430] shrink-0 animate-bounce" />
                 <div className="flex flex-col text-left leading-none">
-                  <span className="font-['Caveat',cursive] text-xl font-bold text-amber-200 tracking-wide">Cocineras</span>
-                  <span className="text-[10px] font-sans text-amber-300/90 font-bold uppercase tracking-wider">¡Sabor de barrio!</span>
+                  <span className="font-['Caveat',cursive] text-xl font-bold text-[#FAF3E7] tracking-wide">Cocineras</span>
+                  <span className="text-[10px] font-sans text-[#F4C430] font-bold uppercase tracking-wider">¡Sabor de barrio!</span>
                 </div>
               </div>
             </div>
             {/* Hand Pointer */}
-            <div className="mt-1.5 flex items-center gap-1 bg-black/90 px-2.5 py-0.5 rounded-full border border-amber-500/50 shadow-md">
-              <span className="text-[10px] font-bold text-amber-300 font-sans">Toca para conocerlas</span>
+            <div className="mt-1.5 flex items-center gap-1 bg-[#2B2117]/95 px-2.5 py-0.5 rounded-full border border-[#F4C430]/70 shadow-md">
+              <span className="text-[10px] font-bold text-[#FAF3E7] font-sans">Toca para encontrar cocineras</span>
             </div>
           </Link>
 
           {/* =================================================================== */}
-          {/* BADGE 3: RECETAS (NARANJA - SOBRE LA PLANCHA DE AREPAS EN LA MESA) */}
+          {/* BADGE 3: MENÚ (NARANJA - SOBRE LA PLANCHA DE AREPAS EN LA MESA)    */}
           {/* =================================================================== */}
           <Link
             href="/menu"
-            className="group absolute left-[45%] sm:left-[49%] lg:left-[51%] top-[74%] sm:top-[76%] lg:top-[78%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 z-30"
+            className="group absolute left-1/2 -translate-x-1/2 top-[68%] sm:top-[70%] -translate-y-1/2 flex flex-col items-center cursor-pointer transition-all duration-300 hover:scale-110 z-30"
           >
             {/* Pulsing ring indicator */}
             <div className="relative">
-              <span className="absolute -inset-1 rounded-full bg-[#F0822D]/50 blur-sm animate-pulse group-hover:bg-[#F0822D]/80" />
-              <div className="relative bg-[#1C1A17]/95 border-2 border-[#F0822D] px-4 py-2 rounded-full flex items-center gap-2.5 shadow-[0_8px_25px_rgba(0,0,0,0.85)] group-hover:border-orange-300 group-hover:bg-[#2A2620]">
+              <span className="absolute -inset-1 rounded-full bg-[#F0822D]/60 blur-sm animate-pulse group-hover:bg-[#F0822D]/90" />
+              <div className="relative bg-[#2B2117]/95 border-2 border-[#F0822D] px-5 py-2.5 rounded-full flex items-center gap-2.5 shadow-[0_8px_25px_rgba(43,33,23,0.85)] group-hover:bg-[#5B4A38]">
                 <UtensilsCrossed className="w-5 h-5 text-[#F0822D] shrink-0 animate-bounce" />
                 <div className="flex flex-col text-left leading-none">
-                  <span className="font-['Caveat',cursive] text-xl font-bold text-orange-200 tracking-wide">Recetas</span>
-                  <span className="text-[10px] font-sans text-orange-300/90 font-bold uppercase tracking-wider">¡Pide tu plato hoy!</span>
+                  <span className="font-['Caveat',cursive] text-2xl font-bold text-[#FAF3E7] tracking-wide">Menú del Día</span>
+                  <span className="text-[10px] font-sans text-[#F0822D] font-bold uppercase tracking-wider">¡Arepas & Platos calientes!</span>
                 </div>
               </div>
             </div>
             {/* Hand Pointer */}
-            <div className="mt-1.5 flex items-center gap-1 bg-black/90 px-2.5 py-0.5 rounded-full border border-[#F0822D]/50 shadow-md">
-              <span className="text-[10px] font-bold text-orange-300 font-sans">Toca para ver el menú</span>
+            <div className="mt-1.5 flex items-center gap-1 bg-[#2B2117]/95 px-3 py-0.5 rounded-full border border-[#F0822D]/70 shadow-md">
+              <span className="text-[10px] font-bold text-[#FAF3E7] font-sans">Toca para explorar los platos caseros</span>
             </div>
           </Link>
 
