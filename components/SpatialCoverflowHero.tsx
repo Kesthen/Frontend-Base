@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Heart,
   Share2,
   Maximize2,
@@ -258,7 +259,7 @@ const SPATIAL_DISHES: SpatialDish[] = [
     cookId: "dona-carmen",
     cookAvatar: "/images/dona_rosa_mascot.jpg",
     cookRole: "Experta en maíz de Boyacá",
-    image: "/images/hero_art_2.jpg",
+    image: "/images/olla_dish_2.jpg",
     price: "$8.500",
     rawPrice: 8500,
     rating: "4.9",
@@ -332,7 +333,8 @@ const CATEGORIES = ["Todos", "Sopas", "Almuerzos", "Vegetariano", "Postres"] as 
 export default function SpatialCoverflowHero() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string>("Todos");
-  const [activeIndex, setActiveIndex] = useState(0);
+  // Inicia en índice 2 (Sancocho Criollo) con platos a ambos lados (izquierda y derecha) según Imagen 3
+  const [activeIndex, setActiveIndex] = useState(2);
   const [expandedDish, setExpandedDish] = useState<SpatialDish | null>(null);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({ "dish-ajiaco": true });
   const [isAudioSimmering, setIsAudioSimmering] = useState(false);
@@ -506,9 +508,20 @@ export default function SpatialCoverflowHero() {
   return (
     <div className="relative w-full font-sans select-none overflow-hidden pb-12">
       {/* ========================================================================= */}
+      {/* 0. PUENTE DE TRANSICIÓN: CONEXIÓN SUAVE CON EL FOGÓN DE LA ABUELITA       */}
+      {/* ========================================================================= */}
+      <div className="relative z-30 flex items-center justify-center pt-2 mb-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[#F4C430]/30 bg-[#2B2117]/85 px-4 py-1.5 text-xs font-bold text-[#F4C430] shadow-xl backdrop-blur-xl">
+          <span className="flex h-2 w-2 rounded-full bg-[#62B869] animate-pulse" />
+          <span>El fogón de Doña Rosa está servido · Conoce las ollas del barrio</span>
+          <ChevronDown className="h-3.5 w-3.5 text-[#F0822D]" />
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
       {/* 1. VISIONOS TOP CAPSULE (Barra Flotante de Estado)                        */}
       {/* ========================================================================= */}
-      <div className="relative z-30 max-w-7xl mx-auto px-4 mb-4">
+      <div className="relative z-30 max-w-7xl mx-auto px-4 mb-5">
         <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-white/15 bg-[#2B2117]/80 px-4 py-2 shadow-xl backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#F0822D] to-[#C84B31] text-white shadow">
@@ -572,8 +585,8 @@ export default function SpatialCoverflowHero() {
       {/* ========================================================================= */}
       {/* 2. HERO HEADLINE (Con Espacio Limpio, Sin Tarjetas Sobrepuestas)           */}
       {/* ========================================================================= */}
-      <div className="relative z-20 text-center px-4 mb-6 pt-2">
-        <p className={`${MONO} text-[10px] font-bold tracking-[0.25em] text-[#F4C430] uppercase mb-1.5`}>
+      <div className="relative z-20 text-center px-4 mb-3 pt-1">
+        <p className={`${MONO} text-[10px] font-bold tracking-[0.25em] text-[#F4C430] uppercase mb-1`}>
           COCINA CASERA DE BARRIO · HECHA A FUEGO LENTO
         </p>
         <h2 className={`${SERIF} text-3xl sm:text-4xl lg:text-5xl text-[#FAF3E7] font-bold tracking-tight leading-tight`}>
@@ -582,24 +595,21 @@ export default function SpatialCoverflowHero() {
             también alimenta.
           </span>
         </h2>
-        <p className="mt-2.5 max-w-xl mx-auto text-xs sm:text-sm text-[#FAF3E7]/80 leading-relaxed font-sans">
-          Desliza para descubrir en 3D lo que están cocinando tus vecinas hoy a pocos pasos de tu casa.
-        </p>
 
-        {/* Filtros de Categoría */}
-        <div className="mt-4 mb-6 flex flex-wrap justify-center gap-1.5">
+        {/* Filtros de Categoría: Posición natural bajo el título con z-40 para interacción garantizada */}
+        <div className="mt-4 mb-0 flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/15 bg-black/50 px-4 py-2 backdrop-blur-xl shadow-xl max-w-fit mx-auto relative z-40 pointer-events-auto">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => {
                 setActiveCategory(cat);
-                setActiveIndex(0);
+                setActiveIndex(cat === "Todos" ? 2 : 0);
               }}
-              className={`rounded-full px-3.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+              className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                 activeCategory === cat
-                  ? "bg-[#F0822D] text-[#2B2117] shadow-md scale-105"
-                  : "border border-white/10 bg-white/5 text-[#FAF3E7]/80 hover:bg-white/10"
+                  ? "bg-[#F0822D] text-[#2B2117] shadow-md shadow-[#F0822D]/30 scale-105"
+                  : "border border-white/10 bg-white/5 text-[#FAF3E7]/80 hover:bg-white/15 hover:text-white"
               }`}
             >
               {cat === "Todos" && `✨ Todos (${SPATIAL_DISHES.length})`}
@@ -613,69 +623,15 @@ export default function SpatialCoverflowHero() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. ESCENARIO CENTRAL Y PANELES LATERALES DECORATIVOS                      */}
       {/* ========================================================================= */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-2 sm:px-4 grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 items-center">
-        
-        {/* =================================================================== */}
-        {/* LATERAL IZQUIERDO: INSIGNIAS (VALOR DIFERENCIADOR) Y RESEÑAS REALES */}
-        {/* =================================================================== */}
-        <div className="hidden lg:flex flex-col gap-3.5 text-left">
-          {/* Card 1: Valor Diferenciador - Insignias */}
-          <div className="rounded-2xl border border-white/15 bg-[#2B2117]/85 p-4 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center gap-2 border-b border-white/10 pb-2 mb-2.5">
-              <Award className="h-4 w-4 text-[#F4C430]" />
-              <span className={`${MONO} text-[10px] font-bold text-[#F4C430] uppercase tracking-wider`}>
-                VALOR DIFERENCIADOR
-              </span>
-            </div>
-            
-            <div className="flex items-start gap-2.5 mt-2">
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[#62B869] bg-[#FAF3E7] p-0.5">
-                <Image src="/images/sello_olla_verde.png" alt="Sello Olla Verde" fill className="object-contain" />
-              </div>
-              <div className="leading-tight">
-                <span className="text-xs font-bold text-[#62B869] flex items-center gap-1">
-                  Sello Olla Verde · 7 PT
-                </span>
-                <p className="text-[11px] text-[#FAF3E7]/75 mt-1 leading-snug">
-                  Premio a cocineras que venden el 100% de sus porciones 7 días seguidos. Cero desperdicio en el conjunto.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-dashed border-white/10 flex items-center justify-between text-[10px] text-[#FAF3E7]/80">
-              <span className="flex items-center gap-1">
-                <Star className="h-3 w-3 text-[#F4C430] fill-[#F4C430]" /> Cocineras con 4.8+
-              </span>
-              <span className="font-mono text-[#F4C430]">⭐ Sazón Verificada</span>
-            </div>
-          </div>
-
-          {/* Card 2: Reseña Real de Vecino */}
-          <div className="rounded-2xl border border-white/15 bg-[#2B2117]/85 p-3.5 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#62B869] mb-1.5">
-              <Quote className="h-3.5 w-3.5 text-[#F0822D]" />
-              <span className="font-bold">RESEÑAS DEL BARRIO</span>
-            </div>
-            <p className="text-xs text-[#FAF3E7]/90 italic leading-snug">
-              &ldquo;El ajiaco de Doña Rosa sabe idéntico al de mi abuela. Llegó caliente a la portería de la Torre 2.&rdquo;
-            </p>
-            <div className="mt-2 flex items-center justify-between text-[10px] text-[#FAF3E7]/60">
-              <span className="font-bold text-[#FAF3E7]">Carlos M. · San Luis</span>
-              <span>⭐⭐⭐⭐⭐</span>
-            </div>
-          </div>
-        </div>
-
-        {/* =================================================================== */}
-        {/* CENTRO: 3D COVERFLOW CAROUSEL (Desplazado abajo, sin tapar texto)   */}
-        {/* =================================================================== */}
+      {/* 3. ESCENARIO CENTRAL: VISOR 3D COVERFLOW (Equidistante entre filtros y dock) */}
+      {/* ========================================================================= */}
+      <div className="relative z-20 w-full max-w-6xl mx-auto px-4 mt-8 sm:mt-10">
         <div className="w-full flex flex-col items-center">
-          <div className="relative min-h-[400px] sm:min-h-[420px] w-full flex items-center justify-center">
+          <div className="relative min-h-[480px] sm:min-h-[500px] w-full flex items-center justify-center">
             <div
-              className="relative w-full max-w-2xl h-[370px] sm:h-[390px] flex items-center justify-center cursor-grab active:cursor-grabbing"
-              style={{ perspective: 1100, transformStyle: "preserve-3d" }}
+              className="relative w-full max-w-4xl h-[470px] sm:h-[490px] flex items-center justify-center cursor-grab active:cursor-grabbing"
+              style={{ perspective: 1200, transformStyle: "preserve-3d" }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -686,8 +642,8 @@ export default function SpatialCoverflowHero() {
                 const diff = index - activeIndex;
                 const isCenter = diff === 0;
 
-                const translateX = diff * 74;
-                const translateZ = -Math.abs(diff) * 125;
+                const translateX = diff * 68;
+                const translateZ = -Math.abs(diff) * 135;
                 const rotateY = diff * -20;
                 const scale = Math.max(0.72, 1 - Math.abs(diff) * 0.14);
                 const opacity = Math.abs(diff) > 2 ? 0 : Math.max(0.35, 1 - Math.abs(diff) * 0.35);
@@ -702,9 +658,9 @@ export default function SpatialCoverflowHero() {
                     onClick={() => {
                       if (!isCenter) setActiveIndex(index);
                     }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out will-change-transform"
+                    className="absolute top-1/2 left-1/2 transition-all duration-500 ease-out will-change-transform"
                     style={{
-                      width: "min(84vw, 305px)",
+                      width: "min(88vw, 360px)",
                       transform: `translate(-50%, -50%) translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale}) ${tiltTransform}`,
                       opacity,
                       zIndex,
@@ -713,98 +669,115 @@ export default function SpatialCoverflowHero() {
                     onMouseMove={isCenter ? handleCardMouseMove : undefined}
                     onMouseLeave={isCenter ? handleCardMouseLeave : undefined}
                   >
-                    {/* Tarjeta de Cristal Compacta */}
+                    {/* Tarjeta de Cristal Ampliada y Destacada */}
                     <div
-                      className={`group relative overflow-hidden rounded-2xl border transition-all ${
+                      className={`group relative overflow-hidden rounded-3xl border transition-all ${
                         isCenter
-                          ? "border-white/30 bg-[#2B2117]/90 shadow-[0_20px_50px_rgba(0,0,0,0.85)] ring-1 ring-white/15"
+                          ? "border-white/35 bg-[#2B2117]/95 shadow-[0_25px_60px_rgba(0,0,0,0.9)] ring-1 ring-[#F0822D]/40"
                           : "border-white/10 bg-[#2B2117]/75 shadow-lg backdrop-blur-md"
-                      } backdrop-blur-2xl p-3`}
+                      } backdrop-blur-2xl p-3.5 sm:p-4`}
                     >
-                      {/* Foto del Plato */}
-                      <div className="relative h-36 sm:h-38 w-full overflow-hidden rounded-xl bg-black/40">
+                      {/* Foto del Plato (Más grande y apetecible) */}
+                      <div className="relative h-44 sm:h-52 w-full overflow-hidden rounded-2xl bg-black/40 shadow-inner">
                         <Image
                           src={dish.image}
                           alt={dish.name}
                           fill
-                          sizes="310px"
+                          sizes="360px"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                           priority={isCenter}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#2B2117] via-transparent to-black/25" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#2B2117] via-transparent to-black/35" />
 
-                        {/* Botones sobre la foto */}
-                        <div className="absolute top-2 inset-x-2 flex items-center justify-between z-10">
-                          <span className="rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold text-[#F4C430] backdrop-blur-md">
+                        {/* Botones y Badges sobre la foto */}
+                        <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-10">
+                          <span className="rounded-full bg-black/70 border border-[#F4C430]/40 px-2.5 py-1 text-[10px] font-bold text-[#F4C430] backdrop-blur-md shadow-md">
                             {dish.badge}
                           </span>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setExpandedDish(dish);
                               }}
-                              className="flex items-center gap-1 rounded-full border border-white/20 bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white shadow backdrop-blur-md hover:bg-white/20"
+                              className="flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white shadow backdrop-blur-md hover:bg-white/20 cursor-pointer"
                               title="Ver detalle"
                             >
-                              <Maximize2 className="h-3 w-3" />
+                              <Maximize2 className="h-3.5 w-3.5" />
                               <span>Ver</span>
                             </button>
                             <button
                               type="button"
                               onClick={(e) => handleToggleFavorite(dish.id, e)}
-                              className={`flex h-6 w-6 items-center justify-center rounded-full border border-white/20 backdrop-blur-md ${
-                                favorites[dish.id] ? "bg-[#C84B31] text-white" : "bg-black/60 text-white/80"
+                              className={`flex h-7 w-7 items-center justify-center rounded-full border border-white/20 backdrop-blur-md cursor-pointer ${
+                                favorites[dish.id] ? "bg-[#C84B31] text-white" : "bg-black/70 text-white/80"
                               }`}
                             >
-                              <Heart className={`h-3 w-3 ${favorites[dish.id] ? "fill-white" : ""}`} />
+                              <Heart className={`h-3.5 w-3.5 ${favorites[dish.id] ? "fill-white" : ""}`} />
                             </button>
                           </div>
                         </div>
 
-                        {/* Precio y Porciones */}
-                        <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between">
-                          <span className="text-xl font-black text-[#F4C430] drop-shadow">{dish.price}</span>
-                          <span className="rounded-full bg-[#62B869] px-2 py-0.5 text-[9px] font-bold text-[#2B2117]">
+                        {/* Precio, Porciones y Pin destacado sobre la foto */}
+                        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-end justify-between">
+                          <span className="text-2xl sm:text-3xl font-black text-[#F4C430] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                            {dish.price}
+                          </span>
+                          <span className="rounded-full bg-[#62B869] px-2.5 py-1 text-[10px] font-black text-[#2B2117] shadow-md uppercase tracking-wider">
                             {dish.portionsLeft} porciones
                           </span>
                         </div>
                       </div>
 
                       {/* Datos del Plato */}
-                      <div className="mt-2 text-left">
-                        <div className="flex items-center justify-between text-[9px] text-[#FAF3E7]/60 font-mono">
-                          <span>{dish.category.toUpperCase()}</span>
+                      <div className="mt-3 text-left">
+                        <div className="flex items-center justify-between text-[10px] text-[#FAF3E7]/70 font-mono">
+                          <span className="font-bold text-[#F0822D]">{dish.category.toUpperCase()} · HECHO EN CASA</span>
                           <span className="text-[#F4C430] font-bold">{index + 1} / {filteredDishes.length}</span>
                         </div>
 
-                        <h3 className={`${SERIF} text-base font-bold text-[#FAF3E7] line-clamp-1 mt-0.5`}>
+                        <h3 className={`${SERIF} text-lg sm:text-xl font-bold text-[#FAF3E7] line-clamp-1 mt-1`}>
                           {dish.name}
                         </h3>
-                        <p className="text-[11px] text-[#FAF3E7]/75 line-clamp-1 mt-0.5">
+                        <p className="text-xs sm:text-[13px] text-[#FAF3E7]/80 line-clamp-1 mt-0.5">
                           {dish.cook} · {dish.residentialComplex}
                         </p>
 
-                        {/* Metadatos de Distancia */}
-                        <div className="mt-1.5 flex items-center justify-between text-[10px] text-[#FAF3E7]/70 border-t border-white/10 pt-1.5">
-                          <span className="flex items-center gap-1 text-[#62B869] font-bold">
-                            <MapPin className="h-3 w-3" />
-                            {dish.distance}
-                          </span>
-                          <span className="flex items-center gap-1 text-[#F4C430]">
-                            <Clock className="h-3 w-3" />
-                            {dish.walkMinutes} min a pie
-                          </span>
+                        {/* =================================================================== */}
+                        {/* PIN DESTACADO: CÁPSULA LUMINOSA DE PROXIMIDAD HIPER-LOCAL           */}
+                        {/* =================================================================== */}
+                        <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border-2 border-[#62B869] bg-gradient-to-r from-[#62B869]/30 via-[#231A12]/95 to-[#2B2117]/95 px-3 py-2.5 shadow-[0_0_25px_rgba(98,184,105,0.45)] ring-1 ring-[#62B869]/40">
+                          <div className="flex items-center gap-2.5">
+                            {/* Radar Beacon Pin */}
+                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#62B869] shadow-[0_0_12px_rgba(98,184,105,0.8)] shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#62B869] opacity-75" />
+                              <MapPin className="relative h-4.5 w-4.5 fill-[#2B2117] text-[#FAF3E7] animate-bounce shrink-0" />
+                            </div>
+                            
+                            <div className="flex flex-col text-left leading-none">
+                              <span className="text-[9px] font-mono font-bold text-[#62B869] uppercase tracking-wider">
+                                📍 CERCA A TI
+                              </span>
+                              <span className="text-sm sm:text-base font-black text-[#FAF3E7] tracking-tight mt-0.5">
+                                {dish.distance}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 rounded-full bg-black/75 border border-[#F4C430]/60 px-2.5 py-1 text-xs font-black text-[#F4C430] shadow-md shrink-0">
+                            <Clock className="h-3.5 w-3.5 text-[#F4C430]" />
+                            <span>{dish.walkMinutes} min a pie</span>
+                          </div>
                         </div>
 
                         {/* Botón Apartar Porción: Abre Modal de Iniciar Sesión / Registro */}
                         <button
                           type="button"
                           onClick={(e) => handleOpenAuthPrompt(dish, e)}
-                          className="mt-2.5 w-full rounded-xl bg-[#F0822D] py-2 text-xs font-bold text-[#2B2117] hover:bg-[#F4C430] transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="mt-3 w-full rounded-2xl bg-[#F0822D] py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#2B2117] hover:bg-[#F4C430] transition-all shadow-lg hover:shadow-[#F0822D]/30 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                         >
-                          <Utensils className="h-3.5 w-3.5" />
+                          <Utensils className="h-4 w-4" />
                           <span>Apartar porción</span>
                         </button>
                       </div>
@@ -816,7 +789,7 @@ export default function SpatialCoverflowHero() {
           </div>
 
           {/* Dock Flotante */}
-          <div className="flex flex-col items-center gap-1.5 mt-2">
+          <div className="flex flex-col items-center gap-1.5 mt-8 sm:mt-10 relative z-30">
             <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#2B2117]/85 px-3 py-1 shadow-lg backdrop-blur-2xl">
               <button
                 type="button"
@@ -872,55 +845,140 @@ export default function SpatialCoverflowHero() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* =================================================================== */}
-        {/* LATERAL DERECHO: ECONOMÍA VECINAL & SEGURIDAD DIRECTA               */}
-        {/* =================================================================== */}
-        <div className="hidden lg:flex flex-col gap-3.5 text-left">
-          {/* Card 1: Comparador de Precios */}
-          <div className="rounded-2xl border border-white/15 bg-[#2B2117]/85 p-4 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center gap-2 border-b border-white/10 pb-2 mb-2.5">
-              <TrendingUp className="h-4 w-4 text-[#62B869]" />
-              <span className={`${MONO} text-[10px] font-bold text-[#62B869] uppercase tracking-wider`}>
-                ECONOMÍA DEL BARRIO
+      {/* ========================================================================= */}
+      {/* 4. PILARES DE OLLACERCANA: INSIGNIAS, RESEÑAS, ECONOMÍA Y CONFIANZA       */}
+      {/* ========================================================================= */}
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-7 sm:mt-8 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 text-left">
+          
+          {/* Card 1: Valor Diferenciador - Sello Olla Verde */}
+          <div className="rounded-3xl border-2 border-white/15 bg-gradient-to-b from-[#2B2117]/95 via-[#221811]/95 to-[#18110B]/95 p-6 sm:p-7 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-2xl flex flex-col justify-between min-h-[300px] transition-all duration-300 hover:border-[#F4C430]/60 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(244,196,48,0.15)] group">
+            <div>
+              <div className="flex items-center gap-2.5 border-b border-white/15 pb-3 mb-3.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4C430]/20 text-[#F4C430]">
+                  <Award className="h-4.5 w-4.5 text-[#F4C430]" />
+                </div>
+                <span className={`${MONO} text-xs font-bold text-[#F4C430] uppercase tracking-wider`}>
+                  VALOR DIFERENCIADOR
+                </span>
+              </div>
+              
+              <div className="flex items-start gap-3.5 mt-3">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-[#62B869] bg-[#FAF3E7] p-1 shadow-lg group-hover:scale-105 transition-transform">
+                  <Image src="/images/sello_olla_verde.png" alt="Sello Olla Verde" fill className="object-contain" />
+                </div>
+                <div className="leading-tight">
+                  <span className="text-sm sm:text-base font-extrabold text-[#62B869] flex items-center gap-1.5">
+                    Sello Olla Verde · 7 PT
+                  </span>
+                  <span className="text-[11px] font-mono text-[#F4C430] block mt-0.5">
+                    Insignia de Excelencia Vecinal
+                  </span>
+                  <p className="text-xs sm:text-[13px] text-[#FAF3E7]/85 mt-2 leading-relaxed">
+                    Premio a cocineras que venden el 100% de sus porciones 7 días seguidos. Cero desperdicio y garantía de comida fresca en el conjunto.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-dashed border-white/15 flex items-center justify-between text-xs text-[#FAF3E7]/85">
+              <span className="flex items-center gap-1 font-semibold">
+                <Star className="h-3.5 w-3.5 text-[#F4C430] fill-[#F4C430]" /> Cocineras con 4.8+
+              </span>
+              <span className="rounded-full bg-[#F4C430]/15 border border-[#F4C430]/40 px-2.5 py-0.5 text-[11px] font-bold text-[#F4C430]">
+                ⭐ Sazón Verificada
               </span>
             </div>
+          </div>
 
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center bg-black/30 p-2 rounded-xl">
-                <span className="text-[#FAF3E7]/70">Domicilio de app:</span>
-                <span className="line-through text-[#C84B31] font-bold">$28k – $35k</span>
+          {/* Card 2: Reseña Real de Vecino */}
+          <div className="rounded-3xl border-2 border-white/15 bg-gradient-to-b from-[#2B2117]/95 via-[#221811]/95 to-[#18110B]/95 p-6 sm:p-7 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-2xl flex flex-col justify-between min-h-[300px] transition-all duration-300 hover:border-[#62B869]/60 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(98,184,105,0.15)] group">
+            <div>
+              <div className="flex items-center gap-2.5 border-b border-white/15 pb-3 mb-3.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#62B869]/20 text-[#62B869]">
+                  <Quote className="h-4.5 w-4.5 text-[#62B869]" />
+                </div>
+                <span className={`${MONO} text-xs font-bold text-[#62B869] uppercase tracking-wider`}>
+                  RESEÑAS DEL BARRIO
+                </span>
               </div>
-              <div className="flex justify-between items-center bg-[#62B869]/15 border border-[#62B869]/40 p-2 rounded-xl">
-                <span className="text-[#FAF3E7] font-bold">OllaCercana:</span>
-                <span className="text-[#62B869] font-black text-sm">$8k – $18k</span>
+              <p className={`${SERIF} text-sm sm:text-base text-[#FAF3E7] italic leading-relaxed mt-2`}>
+                &ldquo;El ajiaco de Doña Rosa sabe idéntico al de mi abuela. Llegó humeante y calientito a la portería de la Torre 2 en solo 5 minutos.&rdquo;
+              </p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#62B869]/20 border border-[#62B869]/40 px-2.5 py-0.5 text-[11px] font-bold text-[#62B869]">
+                  ✓ Vecino Verificado
+                </span>
               </div>
             </div>
-            <p className="text-[10px] text-[#FAF3E7]/70 mt-2 text-center">
-              Ahorras más del 50% y comes comida casera de verdad.
+            <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-[#FAF3E7]/80">
+              <span className="font-bold text-[#FAF3E7]">Carlos M. · Conjunto San Luis</span>
+              <span className="text-sm tracking-widest text-[#F4C430]">★★★★★</span>
+            </div>
+          </div>
+
+          {/* Card 3: Comparador de Precios */}
+          <div className="rounded-3xl border-2 border-white/15 bg-gradient-to-b from-[#2B2117]/95 via-[#221811]/95 to-[#18110B]/95 p-6 sm:p-7 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-2xl flex flex-col justify-between min-h-[300px] transition-all duration-300 hover:border-[#62B869]/60 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(98,184,105,0.15)] group">
+            <div>
+              <div className="flex items-center gap-2.5 border-b border-white/15 pb-3 mb-3.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#62B869]/20 text-[#62B869]">
+                  <TrendingUp className="h-4.5 w-4.5 text-[#62B869]" />
+                </div>
+                <span className={`${MONO} text-xs font-bold text-[#62B869] uppercase tracking-wider`}>
+                  ECONOMÍA DEL BARRIO
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs mt-3">
+                <div className="flex justify-between items-center bg-black/40 border border-white/10 px-3.5 py-2.5 rounded-xl">
+                  <span className="text-[#FAF3E7]/70 text-xs">Domicilio de app tradicional:</span>
+                  <span className="line-through text-[#C84B31] font-bold text-xs sm:text-sm">$28k – $38k</span>
+                </div>
+                <div className="flex justify-between items-center bg-[#62B869]/20 border-2 border-[#62B869] px-3.5 py-2.5 rounded-xl shadow-[0_0_15px_rgba(98,184,105,0.25)]">
+                  <span className="text-[#FAF3E7] font-bold text-xs sm:text-sm">OllaCercana (A pie):</span>
+                  <span className="text-[#62B869] font-black text-sm sm:text-base">$8k – $18k</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-[#FAF3E7]/80 mt-3 text-center border-t border-white/15 pt-3 leading-snug">
+              Ahorras más del 50% y comes comida casera de verdad sin sobrecostos de entrega.
             </p>
           </div>
 
-          {/* Card 2: Seguridad y Confianza */}
-          <div className="rounded-2xl border border-white/15 bg-[#2B2117]/85 p-3.5 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#F4C430] mb-1.5">
-              <ShieldCheck className="h-4 w-4 text-[#62B869]" />
-              <span className="font-bold">CONFIANZA VECINAL</span>
+          {/* Card 4: Seguridad y Confianza */}
+          <div className="rounded-3xl border-2 border-white/15 bg-gradient-to-b from-[#2B2117]/95 via-[#221811]/95 to-[#18110B]/95 p-6 sm:p-7 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-2xl flex flex-col justify-between min-h-[300px] transition-all duration-300 hover:border-[#F4C430]/60 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(244,196,48,0.15)] group">
+            <div>
+              <div className="flex items-center gap-2.5 border-b border-white/15 pb-3 mb-3.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F4C430]/20 text-[#F4C430]">
+                  <ShieldCheck className="h-4.5 w-4.5 text-[#F4C430]" />
+                </div>
+                <span className={`${MONO} text-xs font-bold text-[#F4C430] uppercase tracking-wider`}>
+                  CONFIANZA VECINAL
+                </span>
+              </div>
+              <ul className="space-y-2.5 text-xs sm:text-[13px] text-[#FAF3E7]/85 mt-3">
+                <li className="flex items-center gap-2">
+                  <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-[#62B869]/20 text-[#62B869] font-bold text-xs">✓</span>
+                  <span>Vecinas verificadas en tu conjunto.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-[#62B869]/20 text-[#62B869] font-bold text-xs">✓</span>
+                  <span>Paga directo al recibir en portería.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-[#62B869]/20 text-[#62B869] font-bold text-xs">✓</span>
+                  <span>Sin comisiones abusivas a cocineras.</span>
+                </li>
+              </ul>
             </div>
-            <ul className="space-y-1.5 text-[11px] text-[#FAF3E7]/80">
-              <li className="flex items-center gap-1.5">
-                <span className="text-[#62B869]">✓</span> Vecinas verificadas en tu conjunto.
-              </li>
-              <li className="flex items-center gap-1.5">
-                <span className="text-[#62B869]">✓</span> Paga directo al recibir en portería.
-              </li>
-              <li className="flex items-center gap-1.5">
-                <span className="text-[#62B869]">✓</span> Sin comisiones abusivas.
-              </li>
-            </ul>
+            <div className="mt-4 pt-3 border-t border-white/15 text-xs font-mono font-bold text-[#F4C430] text-center">
+              100% Comunitario y Hecho en el Barrio
+            </div>
           </div>
-        </div>
 
+        </div>
       </div>
 
       {/* ========================================================================= */}
@@ -1388,18 +1446,31 @@ export default function SpatialCoverflowHero() {
                 </span>
                 <h3 className={`${SERIF} text-2xl font-bold text-[#FAF3E7] mt-0.5`}>{expandedDish.name}</h3>
 
-                <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-2.5">
-                  <Image
-                    src={expandedDish.cookAvatar}
-                    alt={expandedDish.cook}
-                    width={40}
-                    height={40}
-                    className="rounded-full border border-[#F0822D]"
-                  />
-                  <div className="flex flex-col text-xs">
-                    <span className="font-bold text-[#FAF3E7]">{expandedDish.cook}</span>
-                    <span className="text-[#FAF3E7]/70 text-[11px]">{expandedDish.cookRole}</span>
-                    <span className="text-[#62B869] font-mono text-[10px]">📍 {expandedDish.residentialComplex}</span>
+                <div className="mt-3 flex items-center justify-between gap-2.5 rounded-2xl border border-white/15 bg-white/5 p-3">
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={expandedDish.cookAvatar}
+                      alt={expandedDish.cook}
+                      width={44}
+                      height={44}
+                      className="rounded-full border-2 border-[#F0822D]"
+                    />
+                    <div className="flex flex-col text-xs">
+                      <span className="font-bold text-[#FAF3E7] text-sm">{expandedDish.cook}</span>
+                      <span className="text-[#FAF3E7]/70 text-[11px]">{expandedDish.cookRole}</span>
+                      <span className="text-[#FAF3E7]/90 font-mono text-[11px] mt-0.5">🏢 {expandedDish.residentialComplex}</span>
+                    </div>
+                  </div>
+
+                  {/* Pin Proximidad Destacado en el Modal */}
+                  <div className="flex flex-col items-end gap-1 rounded-xl border border-[#62B869] bg-[#62B869]/20 px-3 py-1.5 shadow-[0_0_15px_rgba(98,184,105,0.25)] shrink-0">
+                    <div className="flex items-center gap-1.5 text-[#62B869] font-extrabold text-xs">
+                      <MapPin className="h-3.5 w-3.5 fill-[#62B869] text-[#2B2117] animate-bounce" />
+                      <span>{expandedDish.distance}</span>
+                    </div>
+                    <span className="text-[10px] text-[#F4C430] font-mono font-bold flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> {expandedDish.walkMinutes} min a pie
+                    </span>
                   </div>
                 </div>
 
