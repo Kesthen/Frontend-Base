@@ -75,268 +75,160 @@ export interface SpatialDish {
   dietaryTags: string[];
 }
 
-const SPATIAL_DISHES: SpatialDish[] = [
+export const FEATURED_TEASER_DISH: SpatialDish = {
+  id: "dish-ajiaco-teaser",
+  name: "Ajiaco Santafereño de la Casa",
+  category: "Sopas",
+  cook: "Cocinera de Tradición",
+  cookId: "cocinera-tradicional",
+  cookAvatar: "/images/dona_rosa_mascot.jpg",
+  cookRole: "Receta de hogar · Barrio San Luis",
+  image: "/images/menu_ajiaco.jpg",
+  price: "$18.000",
+  rawPrice: 18000,
+  rating: "4.9",
+  reviewsCount: 128,
+  distance: "A 350 m",
+  walkMinutes: 4,
+  residentialComplex: "Conjunto San Luis",
+  portionsLeft: 4,
+  badge: "Muestra del Día",
+  shortDesc: "Tres papas andinas, pechuga desmechada tierna, mazorca dulce y crema fresca.",
+  fullDesc:
+    "Receta tradicional santafereña preparada a fuego lento durante tres horas en olla gruesa. Una muestra representativa de los platos caseros que se comparten entre vecinos en OllaCercana. Para descubrir más ollas y porciones calientes, explora El Libretón.",
+  grandmaNote: "El truco está en que la papa criolla se deshaga solita para espesar el caldo, sin agregar harinas jamás.",
+  cookingTime: "Fuego lento 3h 15m",
+  dietaryTags: ["Sin Gluten", "100% Casero", "Porción Limitada"],
+};
+
+export interface CarouselScreen {
+  id: string;
+  type: "map" | "dish" | "mascot" | "cook" | "buyer";
+  tabLabel: string;
+  tabIcon: string;
+  badge: string;
+  categoryTag: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  overlayMetric: string;
+  overlaySub: string;
+  description: string;
+  highlightLabel: string;
+  highlightValue: string;
+  highlightPill: string;
+  actionLabel: string;
+  actionHref?: string;
+}
+
+export const CAROUSEL_SCREENS: CarouselScreen[] = [
   {
-    id: "dish-ajiaco",
-    name: "Ajiaco Santafereño de Doña Rosa",
-    category: "Sopas",
-    cook: "Doña Rosa Helena",
-    cookId: "dona-rosa",
-    cookAvatar: "/images/dona_rosa_mascot.jpg",
-    cookRole: "Cocinera tradicional · 35 años en el barrio",
+    id: "screen-map",
+    type: "map",
+    tabLabel: "Mapa Cercano",
+    tabIcon: "📍",
+    badge: "Radar de Cocinas Activas",
+    categoryTag: "GEOLOCALIZACIÓN · BARRIO EN VIVO",
+    title: "Cocinas Cercanas en tu Barrio",
+    subtitle: "Ollas activas a 500m – 2km de tu portería",
+    image: "/images/header_chalkboard_banner_adapted.jpg",
+    overlayMetric: "500m – 2km",
+    overlaySub: "10 ollas activas hoy",
+    description:
+      "Ubica en tiempo real qué ollas se están preparando a pocas cuadras. Consulta distancias exactas a pie y recoge en portería sin intermediarios.",
+    highlightLabel: "📍 RADAR VECINAL",
+    highlightValue: "A 4 – 12 min a pie",
+    highlightPill: "Sin Domiciliarios",
+    actionLabel: "Explorar Mapa en Vivo",
+    actionHref: "/cocineras-cercanas",
+  },
+  {
+    id: "screen-dish",
+    type: "dish",
+    tabLabel: "Plato Teaser",
+    tabIcon: "🍲",
+    badge: "Muestra Exclusiva de Hoy",
+    categoryTag: "FOGÓN TRADICIONAL · TEASER",
+    title: "Ajiaco Santafereño de la Casa",
+    subtitle: "Cocinera de Tradición · Conjunto San Luis",
     image: "/images/menu_ajiaco.jpg",
-    price: "$18.000",
-    rawPrice: 18000,
-    rating: "4.9",
-    reviewsCount: 124,
-    distance: "A 350 m",
-    walkMinutes: 4,
-    residentialComplex: "Conjunto San Luis",
-    portionsLeft: 4,
-    badge: "Favorito del Barrio",
-    shortDesc: "Tres tipos de papas andinas, pechuga desmechada tierna, guascas y alcaparras.",
-    fullDesc:
-      "Receta tradicional santafereña preparada a fuego lento durante tres horas en olla gruesa. Combinamos papa criolla que deshace el caldo, papa pastusa y sabanera en tajadas firmes, mazorca tierna y pechuga deshilachada a mano con crema de leche fresca.",
-    grandmaNote: "El truco está en que la papa criolla se deshaga solita para espesar el caldo, sin agregar harinas jamás.",
-    cookingTime: "Fuego lento 3h 15m",
-    dietaryTags: ["Sin Gluten", "100% Casero"],
+    overlayMetric: "$18.000",
+    overlaySub: "Solo 4 porciones hoy",
+    description:
+      "Una pequeña muestra de la comida casera que vive en el barrio. Para preservar la magia del descubrimiento, explora las demás ollas en El Libretón.",
+    highlightLabel: "📍 CERCA A TI",
+    highlightValue: "A 350 m · 4 min a pie",
+    highlightPill: "Porción Caliente",
+    actionLabel: "Apartar esta porción",
   },
   {
-    id: "dish-bandeja",
-    name: "Bandeja Casera con Chicharrón",
-    category: "Almuerzos",
-    cook: "Don Carlos Arango",
-    cookId: "don-carlos",
-    cookAvatar: "/images/abuelita_3d_mascot.jpg",
-    cookRole: "Maestro del fogón · Vecino Torre 5",
-    image: "/images/menu_cazuela.jpg",
-    price: "$22.000",
-    rawPrice: 22000,
-    rating: "4.8",
-    reviewsCount: 98,
-    distance: "A 600 m",
-    walkMinutes: 7,
-    residentialComplex: "Torres de Chapinero",
-    portionsLeft: 5,
-    badge: "Recién Salido",
-    shortDesc: "Frijoles cargamanto en olla de barro, chicharrón crocante, plátano maduro y aguacate.",
-    fullDesc:
-      "Frijoles cargamanto remojados desde la víspera con pezuña y aliño criollo. Acompañados de chicharrón crocante de 12 cortes al punto exacto, carne molida especiada, arroz blanco brillante, tajadas de plátano maduro y aguacate mantequilla recién tajado.",
-    grandmaNote: "Un chorrito de panela raspada al hervir los frijoles les da ese color dorado y quita cualquier acidez.",
-    cookingTime: "Cocción lenta 4 horas",
-    dietaryTags: ["Abundante", "Sabor Paisa"],
+    id: "screen-mascot",
+    type: "mascot",
+    tabLabel: "La Abuelita",
+    tabIcon: "👵",
+    badge: "Anfitriona del Barrio",
+    categoryTag: "BIENVENIDA A OLLACERCANA",
+    title: "La Abuelita te da la bienvenida",
+    subtitle: "Conectando cocinas reales en tu conjunto",
+    image: "/images/abuelita_3d_hq.jpg",
+    overlayMetric: "100% Casero",
+    overlaySub: "Hecho a fuego lento",
+    description:
+      "¡Hola, vecino! Aquí celebramos la sazón casera de las familias del barrio. Platos recién preparados con amor, precios justos y encuentro cálido en portería.",
+    highlightLabel: "👵 SAZÓN COMUNITARIA",
+    highlightValue: "Comida de verdad y confianza",
+    highlightPill: "0% Comisiones",
+    actionLabel: "Descubrir El Libretón",
+    actionHref: "/menu",
   },
   {
-    id: "dish-sancocho",
-    name: "Sancocho Criollo en Olla de Barro",
-    category: "Sopas",
-    cook: "Don Luis Fernando",
-    cookId: "don-luis",
-    cookAvatar: "/images/dona_rosa_mascot.jpg",
-    cookRole: "Especialista en leña y caldos",
-    image: "/images/olla_dish_1.jpg",
-    price: "$19.000",
-    rawPrice: 19000,
-    rating: "4.9",
-    reviewsCount: 112,
-    distance: "A 1.1 km",
-    walkMinutes: 12,
-    residentialComplex: "Residencias Colina",
-    portionsLeft: 3,
-    badge: "Olla al Carbón",
-    shortDesc: "Tres carnes doradas, yuca harinosa de montaña, mazorca dulce y ají casero picadito.",
-    fullDesc:
-      "Sancocho campesino con gallina criolla, costilla de res tierna y magro de cerdo. Caldo denso aromatizado con cilantro cimarrón, plátano verde quebrado a uña y yuca algodonosa que se disuelve en el paladar.",
-    grandmaNote: "El plátano nunca se pica con cuchillo de metal, se quiebra con la mano para no negrear el caldo.",
-    cookingTime: "Fuego pausado 3h 40m",
-    dietaryTags: ["Sin Lactosa", "Energía Criolla"],
+    id: "screen-cook",
+    type: "cook",
+    tabLabel: "Modo Cocinera",
+    tabIcon: "👩‍🍳",
+    badge: "Espacio de Cocina & Olla Verde",
+    categoryTag: "PANTALLA INTERNA · MODO COCINERA",
+    title: "Tu Cocina, Tus Porciones",
+    subtitle: "Publica tus platos y gana en tu barrio",
+    image: "/images/cook_earnings_zero_commission.jpg",
+    overlayMetric: "0% Comisión",
+    overlaySub: "⭐ 4.9 Reputación Vecinal",
+    description:
+      "¿Cocinaste de más en casa? Publica en 1 minuto. Los platos expiran a las 4 horas para asegurar frescura total sin presiones ni cobros de plataforma.",
+    highlightLabel: "🎖️ SELLO OLLA VERDE",
+    highlightValue: "Todo el pago va directo a ti",
+    highlightPill: "Ingreso Vecinal",
+    actionLabel: "Conocer Modo Cocinera",
+    actionHref: "/cuenta/cocina",
   },
   {
-    id: "dish-pollo",
-    name: "Pollo Guisado en Salsa Criolla",
-    category: "Almuerzos",
-    cook: "Doña Marta Cecilia",
-    cookId: "dona-marta",
-    cookAvatar: "/images/abuelita_3d_hq.jpg",
-    cookRole: "Recetas de familia boyacense",
-    image: "/images/dish_pollo_chalk.jpg",
-    price: "$17.000",
-    rawPrice: 17000,
-    rating: "4.8",
-    reviewsCount: 89,
-    distance: "A 800 m",
-    walkMinutes: 9,
-    residentialComplex: "Conjunto El Rosal",
-    portionsLeft: 4,
-    badge: "Sin Gluten",
-    shortDesc: "Pierna pernil marinada con ahogado de tomate chonto, cebolla junca y papitas criollas.",
-    fullDesc:
-      "Pollo fresco de campo dorado en sartén de hierro y luego sumergido en abundante hogao de tomate chonto madurado bajo el sol, ajo campesino y cebolla junca picada finita.",
-    grandmaNote: "El guiso no se apresura: diez minutos sofriendo la cebolla antes del tomate hacen el milagro del sabor.",
-    cookingTime: "Estofado 1h 45m",
-    dietaryTags: ["Sin Gluten", "Poco Aceite"],
-  },
-  {
-    id: "dish-lentejas",
-    name: "Lentejas de la Huerta con Tajadas",
-    category: "Vegetariano",
-    cook: "María Elena Gómez",
-    cookId: "maria-elena",
-    cookAvatar: "/images/dona_rosa_mascot.jpg",
-    cookRole: "Cocina consciente y huerta urbana",
-    image: "/images/hero_plate_gourmet.jpg",
-    price: "$15.000",
-    rawPrice: 15000,
-    rating: "4.7",
-    reviewsCount: 76,
-    distance: "A 1.2 km",
-    walkMinutes: 14,
-    residentialComplex: "Altos del Salitre",
-    portionsLeft: 2,
-    badge: "100% Vegano",
-    shortDesc: "Lentejas estofadas con zanahoria, pimientos asados, arroz blanco suelto y tajadas maduras.",
-    fullDesc:
-      "Lentejas pardinas cocidas a fuego manso con laurel fresco, pimentón rojo asado, zanahoria en daditos y comino tostado. Viene servida con arroz blanco vaporizado y tajadas doradas.",
-    grandmaNote: "Tostar una pizca de comino entero en sartén seca antes de agregarlo al guiso despierta el sabor de la tierra.",
-    cookingTime: "Cocción suave 1h 10m",
-    dietaryTags: ["Vegano", "Vegetariano"],
-  },
-  {
-    id: "dish-mondongo",
-    name: "Mondongo Tradicional de la Abuela",
-    category: "Sopas",
-    cook: "Doña Rosa Helena",
-    cookId: "dona-rosa",
-    cookAvatar: "/images/dona_rosa_mascot.jpg",
-    cookRole: "Receta transmitida por 3 generaciones",
-    image: "/images/olla_dish_2.jpg",
-    price: "$18.500",
-    rawPrice: 18500,
-    rating: "4.9",
-    reviewsCount: 94,
-    distance: "A 500 m",
-    walkMinutes: 6,
-    residentialComplex: "Conjunto San Luis",
-    portionsLeft: 4,
-    badge: "Receta de la Abuela",
-    shortDesc: "Papas criollas y pastusas, cerdo tierno, arveja verde y cilantro fresco picado.",
-    fullDesc:
-      "Mondongo lavado y cocinado minuciosamente con limón y especias andinas. Servido con ahogado casero, arroz blanco suelto, banano dulce y arepa calientica.",
-    grandmaNote: "Hervir con cáscara de naranja y hierbabuena le quita cualquier pesadez y deja un aroma delicioso.",
-    cookingTime: "Cocción lenta 4h 30m",
-    dietaryTags: ["Tradicional", "Energía Criolla"],
-  },
-  {
-    id: "dish-cazuela",
-    name: "Cazuela Campesina de Frijol y Plátano",
-    category: "Almuerzos",
-    cook: "Don Carlos Arango",
-    cookId: "don-carlos",
-    cookAvatar: "/images/abuelita_3d_mascot.jpg",
-    cookRole: "Sabor del campo a la ciudad",
-    image: "/images/menu_cazuela.jpg",
-    price: "$20.000",
-    rawPrice: 20000,
-    rating: "4.8",
-    reviewsCount: 65,
-    distance: "A 700 m",
-    walkMinutes: 8,
-    residentialComplex: "Torres de Chapinero",
-    portionsLeft: 3,
-    badge: "Plato Fuerte",
-    shortDesc: "Frijoles cargamanto estofados con maíz tierno, carne desmechada y plátano maduro.",
-    fullDesc:
-      "Una cazuela humeante servida en plato de barro. Incluye frijoles bien sazonados con aliños naturales, trocitos de carne dorada, maíz tierno dulce y plátano frito.",
-    grandmaNote: "Dejar reposar 15 minutos fuera del fuego antes de servir para que el caldo espese como crema.",
-    cookingTime: "Cocción 3h 20m",
-    dietaryTags: ["Abundante", "Sabor de Hogar"],
-  },
-  {
-    id: "dish-arepas",
-    name: "Arepas de Choclo con Queso Campesino",
-    category: "Almuerzos",
-    cook: "Doña Carmen Alicia",
-    cookId: "dona-carmen",
-    cookAvatar: "/images/dona_rosa_mascot.jpg",
-    cookRole: "Experta en maíz de Boyacá",
-    image: "/images/olla_dish_2.jpg",
-    price: "$8.500",
-    rawPrice: 8500,
-    rating: "4.9",
-    reviewsCount: 160,
-    distance: "A 400 m",
-    walkMinutes: 5,
-    residentialComplex: "Residencias El Carmen",
-    portionsLeft: 8,
-    badge: "Maíz 100% Fresco",
-    shortDesc: "Choclo desgranado al molino de piedra, mantequilla de finca y cuajada fresca dorada.",
-    fullDesc:
-      "Preparadas artesanalmente cada mañana con choclo tierno molido en casa, panela raspada y mantequilla de vaca. Sobre la plancha de hierro se doran lentamente y se coronan con queso campesino derretido.",
-    grandmaNote: "El maíz tierno debe asarse a fuego medio en tiesto de barro con hojas de mazorca para atrapar el aroma.",
-    cookingTime: "Asadas al momento 15m",
-    dietaryTags: ["Vegetariano", "Sin Conservantes"],
-  },
-  {
-    id: "dish-postre",
-    name: "Arroz con Leche de la Tradición",
-    category: "Postres",
-    cook: "Doña Lucía Vargas",
-    cookId: "dona-lucia",
-    cookAvatar: "/images/abuelita_3d_mascot.jpg",
-    cookRole: "Repostera casera desde 1978",
-    image: "/images/menu_postre.jpg",
-    price: "$6.000",
-    rawPrice: 6000,
-    rating: "4.9",
-    reviewsCount: 142,
-    distance: "A 900 m",
-    walkMinutes: 10,
-    residentialComplex: "Bosques de Granada",
-    portionsLeft: 6,
-    badge: "Receta de 1954",
-    shortDesc: "Arroz cremoso con astillas de canela criolla, uvas pasas al vapor y raspadura de panela.",
-    fullDesc:
-      "Arroz cocido en leche pura de vaca con astillas de canela dulce y corteza fina de limón amarillo. Endulzado naturalmente con leche condensada artesanal y una caricia de panela raspada.",
-    grandmaNote: "Revolver siempre con cuchara de palo en forma de ocho para que no se pegue ni se ahúme.",
-    cookingTime: "Fuego tenue 50m",
-    dietaryTags: ["Vegetariano", "Dulce Tradición"],
-  },
-  {
-    id: "dish-natas",
-    name: "Postre de Natas Santafereño",
-    category: "Postres",
-    cook: "Doña Lucía Vargas",
-    cookId: "dona-lucia",
-    cookAvatar: "/images/abuelita_3d_mascot.jpg",
-    cookRole: "Tradición colonial de Bogotá",
-    image: "/images/libreton_book_bg.jpg",
-    price: "$7.500",
-    rawPrice: 7500,
-    rating: "4.8",
-    reviewsCount: 88,
-    distance: "A 900 m",
-    walkMinutes: 10,
-    residentialComplex: "Bosques de Granada",
-    portionsLeft: 5,
-    badge: "Sabor Colonial",
-    shortDesc: "Capas de nata pura de leche hervida lentamente, almíbar de canela y uvas pasas.",
-    fullDesc:
-      "El postre insignia de las abuelas bogotanas. Requiere recolectar pacientemente las natas de la leche entera en hervor tenue durante horas, bañadas en un almíbar dorado con clavo y canela.",
-    grandmaNote: "La paciencia es todo: recolectar cada nata con cuidado y no apresurar el almíbar.",
-    cookingTime: "Elaboración lenta 3h",
-    dietaryTags: ["Vegetariano", "Patrimonio Dulce"],
+    id: "screen-buyer",
+    type: "buyer",
+    tabLabel: "Vecino Comensal",
+    tabIcon: "🛍️",
+    badge: "Pasaporte & Reservas Activas",
+    categoryTag: "PANTALLA INTERNA · PERFIL & PEDIDOS",
+    title: "Tus Pedidos & Vecino Fiel",
+    subtitle: "Aparta porciones y coordina en portería",
+    image: "/images/vecino_fiel_hero_scene.jpg",
+    overlayMetric: "Vecino Fiel",
+    overlaySub: "5% de descuento por racha",
+    description:
+      "Aparta tu plato con 1 toque sin tarjetas bancarias. Chatea directamente con quien cocina, acuerda la entrega en portería y acumula sellos de fidelidad.",
+    highlightLabel: "🛍️ GESTIÓN EN PORTERÍA",
+    highlightValue: "Pagas directo al recibir",
+    highlightPill: "Chat Interno",
+    actionLabel: "Ver Mis Reservas",
+    actionHref: "/cuenta/reservas",
   },
 ];
 
-const CATEGORIES = ["Todos", "Sopas", "Almuerzos", "Vegetariano", "Postres"] as const;
-
 export default function SpatialCoverflowHero() {
   const router = useRouter();
-  const [activeCategory, setActiveCategory] = useState<string>("Todos");
-  // Inicia en índice 2 (Sancocho Criollo) con platos a ambos lados (izquierda y derecha) según Imagen 3
+  // Inicia en índice 2 (La Abuelita, centro) con pantallas/tarjetas a ambos lados según diseño interactivo
   const [activeIndex, setActiveIndex] = useState(2);
   const [expandedDish, setExpandedDish] = useState<SpatialDish | null>(null);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({ "dish-ajiaco": true });
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({ "dish-ajiaco-teaser": true });
   const [isAudioSimmering, setIsAudioSimmering] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [cardTilt, setCardTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -356,19 +248,7 @@ export default function SpatialCoverflowHero() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Platos filtrados
-  const filteredDishes = SPATIAL_DISHES.filter((dish) => {
-    if (activeCategory === "Todos") return true;
-    return dish.category === activeCategory;
-  });
-
-  useEffect(() => {
-    if (activeIndex >= filteredDishes.length) {
-      setActiveIndex(Math.max(0, filteredDishes.length - 1));
-    }
-  }, [activeCategory, filteredDishes.length, activeIndex]);
-
-  const currentDish = filteredDishes[activeIndex] || filteredDishes[0];
+  const currentScreen = CAROUSEL_SCREENS[activeIndex] || CAROUSEL_SCREENS[2];
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -467,7 +347,7 @@ export default function SpatialCoverflowHero() {
     const diff = e.clientX - dragStartX;
     if (Math.abs(diff) > 55) {
       if (diff > 0 && activeIndex > 0) setActiveIndex((p) => p - 1);
-      else if (diff < 0 && activeIndex < filteredDishes.length - 1) setActiveIndex((p) => p + 1);
+      else if (diff < 0 && activeIndex < CAROUSEL_SCREENS.length - 1) setActiveIndex((p) => p + 1);
       setIsDragging(false);
     }
   };
@@ -477,7 +357,7 @@ export default function SpatialCoverflowHero() {
     const diff = e.changedTouches[0].clientX - dragStartX;
     if (Math.abs(diff) > 45) {
       if (diff > 0 && activeIndex > 0) setActiveIndex((p) => p - 1);
-      else if (diff < 0 && activeIndex < filteredDishes.length - 1) setActiveIndex((p) => p + 1);
+      else if (diff < 0 && activeIndex < CAROUSEL_SCREENS.length - 1) setActiveIndex((p) => p + 1);
     }
   };
 
@@ -513,7 +393,7 @@ export default function SpatialCoverflowHero() {
       <div className="relative z-30 flex items-center justify-center pt-2 mb-4">
         <div className="inline-flex items-center gap-2 rounded-full border border-[#F4C430]/30 bg-[#2B2117]/85 px-4 py-1.5 text-xs font-bold text-[#F4C430] shadow-xl backdrop-blur-xl">
           <span className="flex h-2 w-2 rounded-full bg-[#62B869] animate-pulse" />
-          <span>El fogón de Doña Rosa está servido · Conoce las ollas del barrio</span>
+          <span>El fogón de la abuelita está servido · Conoce las ollas del barrio</span>
           <ChevronDown className="h-3.5 w-3.5 text-[#F0822D]" />
         </div>
       </div>
@@ -596,27 +476,20 @@ export default function SpatialCoverflowHero() {
           </span>
         </h2>
 
-        {/* Filtros de Categoría: Posición natural bajo el título con z-40 para interacción garantizada */}
+        {/* Selector de Pantallas del Carrusel: Exactamente la misma estructura de botones con z-40 */}
         <div className="mt-4 mb-0 flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/15 bg-black/50 px-4 py-2 backdrop-blur-xl shadow-xl max-w-fit mx-auto relative z-40 pointer-events-auto">
-          {CATEGORIES.map((cat) => (
+          {CAROUSEL_SCREENS.map((screen, idx) => (
             <button
-              key={cat}
+              key={screen.id}
               type="button"
-              onClick={() => {
-                setActiveCategory(cat);
-                setActiveIndex(cat === "Todos" ? 2 : 0);
-              }}
+              onClick={() => setActiveIndex(idx)}
               className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                activeCategory === cat
+                activeIndex === idx
                   ? "bg-[#F0822D] text-[#2B2117] shadow-md shadow-[#F0822D]/30 scale-105"
                   : "border border-white/10 bg-white/5 text-[#FAF3E7]/80 hover:bg-white/15 hover:text-white"
               }`}
             >
-              {cat === "Todos" && `✨ Todos (${SPATIAL_DISHES.length})`}
-              {cat === "Sopas" && "🍲 Sopas"}
-              {cat === "Almuerzos" && "🍛 Almuerzos"}
-              {cat === "Vegetariano" && "🥗 Vegetariano"}
-              {cat === "Postres" && "🍮 Postres"}
+              <span>{screen.tabIcon} {screen.tabLabel}</span>
             </button>
           ))}
         </div>
@@ -638,7 +511,7 @@ export default function SpatialCoverflowHero() {
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
-              {filteredDishes.map((dish, index) => {
+              {CAROUSEL_SCREENS.map((screen, index) => {
                 const diff = index - activeIndex;
                 const isCenter = diff === 0;
 
@@ -654,7 +527,7 @@ export default function SpatialCoverflowHero() {
 
                 return (
                   <div
-                    key={dish.id}
+                    key={screen.id}
                     onClick={() => {
                       if (!isCenter) setActiveIndex(index);
                     }}
@@ -677,109 +550,184 @@ export default function SpatialCoverflowHero() {
                           : "border-white/10 bg-[#2B2117]/75 shadow-lg backdrop-blur-md"
                       } backdrop-blur-2xl p-3.5 sm:p-4`}
                     >
-                      {/* Foto del Plato (Más grande y apetecible) */}
+                      {/* Visual Superior de la Pantalla */}
                       <div className="relative h-44 sm:h-52 w-full overflow-hidden rounded-2xl bg-black/40 shadow-inner">
-                        <Image
-                          src={dish.image}
-                          alt={dish.name}
-                          fill
-                          sizes="360px"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          priority={isCenter}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#2B2117] via-transparent to-black/35" />
+                        {screen.type === "map" ? (
+                          <div className="relative h-full w-full bg-[#181D1A] overflow-hidden flex items-center justify-center">
+                            <Image
+                              src={screen.image}
+                              alt={screen.title}
+                              fill
+                              sizes="360px"
+                              className="object-cover opacity-30 brightness-75 filter blur-[0.5px]"
+                            />
+                            {/* SVG Radar rings overlay */}
+                            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 360 220">
+                              <defs>
+                                <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
+                                  <stop offset="0%" stopColor="#62B869" stopOpacity="0.35" />
+                                  <stop offset="100%" stopColor="#62B869" stopOpacity="0" />
+                                </radialGradient>
+                              </defs>
+                              <circle cx="180" cy="110" r="95" fill="none" stroke="#62B869" strokeWidth="1" strokeDasharray="3 3" opacity="0.35" />
+                              <circle cx="180" cy="110" r="65" fill="none" stroke="#62B869" strokeWidth="1" opacity="0.45" />
+                              <circle cx="180" cy="110" r="35" fill="url(#radarGlow)" stroke="#62B869" strokeWidth="1.5" opacity="0.65" />
+                              {/* Beacon dots */}
+                              <circle cx="130" cy="75" r="4" fill="#F4C430" />
+                              <circle cx="230" cy="85" r="5" fill="#62B869" />
+                              <circle cx="195" cy="150" r="4.5" fill="#F0822D" />
+                              <circle cx="180" cy="110" r="5" fill="#62B869" />
+                            </svg>
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#2B2117] via-transparent to-black/35" />
+                          </div>
+                        ) : (
+                          <>
+                            <Image
+                              src={screen.image}
+                              alt={screen.title}
+                              fill
+                              sizes="360px"
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                              priority={isCenter}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#2B2117] via-transparent to-black/35" />
+                          </>
+                        )}
 
-                        {/* Botones y Badges sobre la foto */}
+                        {/* Badges y Botones superiores sobre la imagen */}
                         <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-10">
-                          <span className="rounded-full bg-black/70 border border-[#F4C430]/40 px-2.5 py-1 text-[10px] font-bold text-[#F4C430] backdrop-blur-md shadow-md">
-                            {dish.badge}
+                          <span className="rounded-full bg-black/75 border border-white/20 px-2.5 py-1 text-[10px] font-bold text-[#F4C430] backdrop-blur-md shadow-md">
+                            {screen.badge}
                           </span>
+
                           <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedDish(dish);
-                              }}
-                              className="flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white shadow backdrop-blur-md hover:bg-white/20 cursor-pointer"
-                              title="Ver detalle"
-                            >
-                              <Maximize2 className="h-3.5 w-3.5" />
-                              <span>Ver</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => handleToggleFavorite(dish.id, e)}
-                              className={`flex h-7 w-7 items-center justify-center rounded-full border border-white/20 backdrop-blur-md cursor-pointer ${
-                                favorites[dish.id] ? "bg-[#C84B31] text-white" : "bg-black/70 text-white/80"
-                              }`}
-                            >
-                              <Heart className={`h-3.5 w-3.5 ${favorites[dish.id] ? "fill-white" : ""}`} />
-                            </button>
+                            {screen.type === "dish" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedDish(FEATURED_TEASER_DISH);
+                                  }}
+                                  className="flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white shadow backdrop-blur-md hover:bg-white/20 cursor-pointer"
+                                  title="Ver detalle"
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5" />
+                                  <span>Ver</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleToggleFavorite("dish-ajiaco-teaser", e)}
+                                  className={`flex h-7 w-7 items-center justify-center rounded-full border border-white/20 backdrop-blur-md cursor-pointer ${
+                                    favorites["dish-ajiaco-teaser"] ? "bg-[#C84B31] text-white" : "bg-black/70 text-white/80"
+                                  }`}
+                                >
+                                  <Heart className={`h-3.5 w-3.5 ${favorites["dish-ajiaco-teaser"] ? "fill-white" : ""}`} />
+                                </button>
+                              </>
+                            ) : screen.type === "cook" ? (
+                              <span className="rounded-full bg-[#62B869]/20 border border-[#62B869]/40 px-2 py-0.5 text-[10px] font-bold text-[#62B869] backdrop-blur-md">
+                                Sello Olla Verde
+                              </span>
+                            ) : screen.type === "buyer" ? (
+                              <span className="rounded-full bg-[#C84B31]/20 border border-[#C84B31]/40 px-2 py-0.5 text-[10px] font-bold text-[#FDF3D6] backdrop-blur-md">
+                                Pasaporte
+                              </span>
+                            ) : screen.type === "map" ? (
+                              <span className="rounded-full bg-[#62B869]/20 border border-[#62B869]/40 px-2 py-0.5 text-[10px] font-bold text-[#62B869] backdrop-blur-md flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#62B869] animate-ping" />
+                                En vivo
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-[#F4C430]/20 border border-[#F4C430]/40 px-2 py-0.5 text-[10px] font-bold text-[#F4C430] backdrop-blur-md">
+                                Oficial
+                              </span>
+                            )}
                           </div>
                         </div>
 
-                        {/* Precio, Porciones y Pin destacado sobre la foto */}
+                        {/* Métricas destacadas sobre la foto */}
                         <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-end justify-between">
                           <span className="text-2xl sm:text-3xl font-black text-[#F4C430] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                            {dish.price}
+                            {screen.overlayMetric}
                           </span>
-                          <span className="rounded-full bg-[#62B869] px-2.5 py-1 text-[10px] font-black text-[#2B2117] shadow-md uppercase tracking-wider">
-                            {dish.portionsLeft} porciones
+                          <span className="rounded-full bg-black/70 border border-white/20 px-2.5 py-1 text-[10px] font-bold text-[#FAF3E7] shadow-md uppercase tracking-wider backdrop-blur-md">
+                            {screen.overlaySub}
                           </span>
                         </div>
                       </div>
 
-                      {/* Datos del Plato */}
+                      {/* Datos de la Pantalla */}
                       <div className="mt-3 text-left">
                         <div className="flex items-center justify-between text-[10px] text-[#FAF3E7]/70 font-mono">
-                          <span className="font-bold text-[#F0822D]">{dish.category.toUpperCase()} · HECHO EN CASA</span>
-                          <span className="text-[#F4C430] font-bold">{index + 1} / {filteredDishes.length}</span>
+                          <span className="font-bold text-[#F0822D]">{screen.categoryTag}</span>
+                          <span className="text-[#F4C430] font-bold">{index + 1} / {CAROUSEL_SCREENS.length}</span>
                         </div>
 
                         <h3 className={`${SERIF} text-lg sm:text-xl font-bold text-[#FAF3E7] line-clamp-1 mt-1`}>
-                          {dish.name}
+                          {screen.title}
                         </h3>
                         <p className="text-xs sm:text-[13px] text-[#FAF3E7]/80 line-clamp-1 mt-0.5">
-                          {dish.cook} · {dish.residentialComplex}
+                          {screen.subtitle}
                         </p>
 
-                        {/* =================================================================== */}
-                        {/* PIN DESTACADO: CÁPSULA LUMINOSA DE PROXIMIDAD HIPER-LOCAL           */}
-                        {/* =================================================================== */}
+                        {/* Cápsula de Proximidad / Característica Destacada */}
                         <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border-2 border-[#62B869] bg-gradient-to-r from-[#62B869]/30 via-[#231A12]/95 to-[#2B2117]/95 px-3 py-2.5 shadow-[0_0_25px_rgba(98,184,105,0.45)] ring-1 ring-[#62B869]/40">
                           <div className="flex items-center gap-2.5">
-                            {/* Radar Beacon Pin */}
                             <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#62B869] shadow-[0_0_12px_rgba(98,184,105,0.8)] shrink-0">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#62B869] opacity-75" />
-                              <MapPin className="relative h-4.5 w-4.5 fill-[#2B2117] text-[#FAF3E7] animate-bounce shrink-0" />
+                              {screen.type === "map" || screen.type === "dish" ? (
+                                <>
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#62B869] opacity-75" />
+                                  <MapPin className="relative h-4.5 w-4.5 fill-[#2B2117] text-[#FAF3E7] animate-bounce shrink-0" />
+                                </>
+                              ) : screen.type === "cook" ? (
+                                <ChefHat className="h-4.5 w-4.5 text-[#2B2117]" />
+                              ) : screen.type === "buyer" ? (
+                                <ShoppingBag className="h-4.5 w-4.5 text-[#2B2117]" />
+                              ) : (
+                                <Sparkles className="h-4.5 w-4.5 text-[#2B2117]" />
+                              )}
                             </div>
-                            
+
                             <div className="flex flex-col text-left leading-none">
                               <span className="text-[9px] font-mono font-bold text-[#62B869] uppercase tracking-wider">
-                                📍 CERCA A TI
+                                {screen.highlightLabel}
                               </span>
                               <span className="text-sm sm:text-base font-black text-[#FAF3E7] tracking-tight mt-0.5">
-                                {dish.distance}
+                                {screen.highlightValue}
                               </span>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-1.5 rounded-full bg-black/75 border border-[#F4C430]/60 px-2.5 py-1 text-xs font-black text-[#F4C430] shadow-md shrink-0">
                             <Clock className="h-3.5 w-3.5 text-[#F4C430]" />
-                            <span>{dish.walkMinutes} min a pie</span>
+                            <span>{screen.highlightPill}</span>
                           </div>
                         </div>
 
-                        {/* Botón Apartar Porción: Abre Modal de Iniciar Sesión / Registro */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleOpenAuthPrompt(dish, e)}
-                          className="mt-3 w-full rounded-2xl bg-[#F0822D] py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#2B2117] hover:bg-[#F4C430] transition-all shadow-lg hover:shadow-[#F0822D]/30 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                          <Utensils className="h-4 w-4" />
-                          <span>Apartar porción</span>
-                        </button>
+                        {/* Botón de Acción Principal */}
+                        {screen.type === "dish" ? (
+                          <button
+                            type="button"
+                            onClick={(e) => handleOpenAuthPrompt(FEATURED_TEASER_DISH, e)}
+                            className="mt-3 w-full rounded-2xl bg-[#F0822D] py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#2B2117] hover:bg-[#F4C430] transition-all shadow-lg hover:shadow-[#F0822D]/30 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <Utensils className="h-4 w-4" />
+                            <span>{screen.actionLabel}</span>
+                          </button>
+                        ) : (
+                          <Link
+                            href={screen.actionHref || "/"}
+                            className="mt-3 w-full rounded-2xl bg-[#F0822D] py-2.5 sm:py-3 text-xs sm:text-sm font-bold text-[#2B2117] hover:bg-[#F4C430] transition-all shadow-lg hover:shadow-[#F0822D]/30 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            {screen.type === "map" && <MapPin className="h-4 w-4" />}
+                            {screen.type === "mascot" && <Sparkles className="h-4 w-4" />}
+                            {screen.type === "cook" && <ChefHat className="h-4 w-4" />}
+                            {screen.type === "buyer" && <ShoppingBag className="h-4 w-4" />}
+                            <span>{screen.actionLabel}</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -800,30 +748,51 @@ export default function SpatialCoverflowHero() {
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
 
-              <div onClick={() => setExpandedDish(currentDish)} className="flex items-center gap-2 px-1 cursor-pointer">
+              <div
+                onClick={() => {
+                  if (currentScreen.type === "dish") {
+                    setExpandedDish(FEATURED_TEASER_DISH);
+                  } else if (currentScreen.actionHref) {
+                    router.push(currentScreen.actionHref);
+                  }
+                }}
+                className="flex items-center gap-2 px-1 cursor-pointer"
+              >
                 <div className="relative h-6 w-6 overflow-hidden rounded-full border border-[#F0822D]">
-                  <Image src={currentDish.image} alt={currentDish.name} fill className="object-cover" />
+                  <Image src={currentScreen.image} alt={currentScreen.title} fill className="object-cover" />
                 </div>
                 <div className="flex flex-col text-left leading-none max-w-[130px] sm:max-w-[180px]">
-                  <span className="text-xs font-bold text-[#FAF3E7] truncate">{currentDish.name}</span>
-                  <span className="text-[9px] text-[#FAF3E7]/60 truncate">{currentDish.cook} · {currentDish.price}</span>
+                  <span className="text-xs font-bold text-[#FAF3E7] truncate">{currentScreen.title}</span>
+                  <span className="text-[9px] text-[#FAF3E7]/60 truncate">{currentScreen.subtitle}</span>
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={(e) => handleToggleFavorite(currentDish.id, e)}
+                onClick={(e) => {
+                  if (currentScreen.type === "dish") {
+                    handleToggleFavorite("dish-ajiaco-teaser", e);
+                  } else {
+                    showToast("✨ ¡Sección explorada con éxito!");
+                  }
+                }}
                 className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                  favorites[currentDish.id] ? "bg-[#C84B31]/20 text-[#C84B31]" : "bg-white/5 text-white/70"
+                  currentScreen.type === "dish" && favorites["dish-ajiaco-teaser"]
+                    ? "bg-[#C84B31]/20 text-[#C84B31]"
+                    : "bg-white/5 text-white/70"
                 }`}
               >
-                <Heart className={`h-3 w-3 ${favorites[currentDish.id] ? "fill-[#C84B31]" : ""}`} />
+                <Heart
+                  className={`h-3 w-3 ${
+                    currentScreen.type === "dish" && favorites["dish-ajiaco-teaser"] ? "fill-[#C84B31]" : ""
+                  }`}
+                />
               </button>
 
               <button
                 type="button"
-                onClick={() => setActiveIndex((p) => Math.min(filteredDishes.length - 1, p + 1))}
-                disabled={activeIndex === filteredDishes.length - 1}
+                onClick={() => setActiveIndex((p) => Math.min(CAROUSEL_SCREENS.length - 1, p + 1))}
+                disabled={activeIndex === CAROUSEL_SCREENS.length - 1}
                 className="flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-[#FAF3E7] hover:bg-white/15 disabled:opacity-30"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -832,7 +801,7 @@ export default function SpatialCoverflowHero() {
 
             {/* Paginación */}
             <div className="flex items-center gap-1">
-              {filteredDishes.map((_, i) => (
+              {CAROUSEL_SCREENS.map((_, i) => (
                 <button
                   key={i}
                   type="button"
@@ -847,7 +816,6 @@ export default function SpatialCoverflowHero() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* 4. PILARES DE OLLACERCANA: INSIGNIAS, RESEÑAS, ECONOMÍA Y CONFIANZA       */}
       {/* ========================================================================= */}
       <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-7 sm:mt-8 mb-10">
@@ -905,7 +873,7 @@ export default function SpatialCoverflowHero() {
                 </span>
               </div>
               <p className={`${SERIF} text-sm sm:text-base text-[#FAF3E7] italic leading-relaxed mt-2`}>
-                &ldquo;El ajiaco de Doña Rosa sabe idéntico al de mi abuela. Llegó humeante y calientito a la portería de la Torre 2 en solo 5 minutos.&rdquo;
+                &ldquo;El ajiaco tradicional sabe idéntico al de mi abuela. Llegó humeante y calientito a la portería de la Torre 2 en solo 5 minutos.&rdquo;
               </p>
               <div className="mt-3 flex items-center gap-1.5">
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#62B869]/20 border border-[#62B869]/40 px-2.5 py-0.5 text-[11px] font-bold text-[#62B869]">
@@ -914,7 +882,7 @@ export default function SpatialCoverflowHero() {
               </div>
             </div>
             <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-[#FAF3E7]/80">
-              <span className="font-bold text-[#FAF3E7]">Carlos M. · Conjunto San Luis</span>
+              <span className="font-bold text-[#FAF3E7]">Vecino Comensal · Conjunto San Luis</span>
               <span className="text-sm tracking-widest text-[#F4C430]">★★★★★</span>
             </div>
           </div>
@@ -1380,6 +1348,7 @@ export default function SpatialCoverflowHero() {
               <div className="mt-5 space-y-2.5">
                 <Link
                   href="/cuenta"
+                  onClick={() => setAuthPromptDish(null)}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#F0822D] py-3 text-xs font-bold text-[#2B2117] hover:bg-[#F4C430] transition-colors shadow-md"
                 >
                   <LogIn className="h-4 w-4" />
@@ -1387,6 +1356,7 @@ export default function SpatialCoverflowHero() {
                 </Link>
                 <Link
                   href="/cuenta/registro"
+                  onClick={() => setAuthPromptDish(null)}
                   className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 py-3 text-xs font-bold text-[#FAF3E7] hover:bg-white/10 transition-colors"
                 >
                   <UserPlus className="h-4 w-4" />
