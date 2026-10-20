@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { MapPin, ChefHat, UtensilsCrossed, ChevronDown, Sparkles, CircleHelp } from "lucide-react";
+import { MapPin, ChefHat, UtensilsCrossed, ChevronDown, Sparkles } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 
 export default function HeroSection() {
@@ -39,13 +39,12 @@ export default function HeroSection() {
   const quickBarOpacity = 1;
 
   const handleScrollDownClick = () => {
-    const container = document.getElementById("kitchen-scroll");
-    if (!container) return;
-    const scrollableHeight = container.offsetHeight - window.innerHeight;
-    window.scrollTo({
-      top: container.offsetTop + scrollableHeight * 0.95,
-      behavior: "smooth"
-    });
+    const guide = document.getElementById("community-guide");
+    if (!guide) return;
+
+    const targetTop = guide.getBoundingClientRect().top + window.scrollY - 24;
+    window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+    window.dispatchEvent(new Event("ollacercana:show-home-guide"));
   };
 
   return (

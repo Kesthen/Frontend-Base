@@ -14,8 +14,8 @@ const TRANSITIONS_MAP: { from: string; to: string; videoSrc: string }[] = [
   { from: "/", to: "/cocineras-cercanas", videoSrc: "/videos/portada_mapa.mp4" },
 
   // 3. Menú ➔ Cocineras / Mapa
-  { from: "/menu", to: "/cocineras-cercanas", videoSrc: "/videos/menu_cocinera.mp4" },
-  { from: "/menu", to: "/cocineras", videoSrc: "/videos/menu_cocinera.mp4" },
+  { from: "/menu", to: "/cocineras-cercanas", videoSrc: "/videos/menu_cocineras.mp4" },
+  { from: "/menu", to: "/cocineras", videoSrc: "/videos/menu_cocineras.mp4" },
 
   // 4. Menú ➔ Login / Cuenta (el video original)
   { from: "/menu", to: "/cuenta", videoSrc: "/videos/libreton_transicion.mp4" },
@@ -162,7 +162,7 @@ export default function LibretonTransition({ children }: { children: ReactNode }
         <div style={{ display: "none" }} aria-hidden="true">
           <video src="/videos/portada_menu.mp4" preload="auto" muted playsInline />
           <video src="/videos/portada_mapa.mp4" preload="auto" muted playsInline />
-          <video src="/videos/menu_cocinera.mp4" preload="auto" muted playsInline />
+          <video src="/videos/menu_cocineras.mp4" preload="auto" muted playsInline />
           <video src="/videos/libreton_transicion.mp4" preload="auto" muted playsInline />
         </div>
 
